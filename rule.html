@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <meta charset="utf-8">
+    <title>Falco Rules Explorer</title>
+    <meta name="author" content="">
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.1.3/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.12.1/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.12.1/js/dataTables.bootstrap5.min.js"></script>
+    <style>
+        .big {
+            font-size: 105%;
+        }
+        .list {
+            background-color: #b41616;
+        }
+        .macro {
+            background-color: #1138c7;
+        }
+        .rule {
+            background-color: #06a16d;
+        }
+        .enabled {
+            background-color: #017f33;
+        }
+        .disabled {
+            background-color: #cc0047d7;
+        }
+        a:link { text-decoration: none; }
+        .form-select {
+            margin-left: 16px;
+            margin-bottom: 5px;
+            display: inline;
+        }
+        .name {
+            font-weight: bold;
+            font-size: 120%;
+        }
+        .code {
+            background: #f4f4f4;
+            border: 1px solid #ddd;
+            border-left: 3px solid #00b8cd;
+            color: #666;
+            page-break-inside: avoid;
+            font-family: monospace;
+            font-size: 15px;
+            line-height: 1.6;
+            max-width: 100%;
+            overflow: auto;
+            padding: 1em 1.5em;
+            display: block;
+            word-wrap: break-word;
+            margin-right: 20px;
+        }
+        .field {
+            font-weight: bold;
+        }
+    </style>
+    </head>
+    <body>
+    <div>
+        <a href="./index.html"><img src="https://sysdig.com/wp-content/uploads/2018/10/Falco-horizontal-logo-teal_2x.png" height="55" alt="falco logo"></a>
+    </div>
+    <div style="padding-left: 10px; padding-bottom: 8px;">
+        <span class="field">Type: </span><span id="type"></span>
+    </div>
+    <div style="padding-left: 10px; padding-bottom: 8px;">
+        <span class="field">Name: </span><span id="name" class="name"></span>
+    </div>
+    <div id="descDiv" style="padding-left: 10px; padding-bottom: 8px;">
+        <span class="field">Desc: </span><span id="desc"></span>
+    </div>
+    <div id="itemsDiv" style="padding-left: 10px; padding-bottom: 8px;">
+        <span class="field">Items:</span> </br>
+        <div style="padding-left: 55px; padding-bottom: 8px;">
+            <span id="items" class="code"></span>
+        </div>
+    </div>
+    <div id="conditionDiv" style="padding-left: 10px; padding-bottom: 8px;">
+        <span class="field">Condition:</span> </br>
+       <div style="padding-left: 55px;">
+           <span id="condition" class="code"></span>
+       </div>
+    </div>
+    <div id="outputDiv" style="padding-left: 10px;">
+        <span class="field">Output:</span></br>
+        <div style="padding-left: 55px; padding-bottom: 8px;">
+            <span id="output" class="code"></span>
+        </div>
+    </div>
+    <div id="statusDiv" style="padding-left: 10px; padding-bottom: 8px;">
+        <span class="field">Status: </span><span id="status"></span>
+    </div>
+    <div id="tagsDiv" style="padding-left: 10px; padding-bottom: 8px;">
+        <span class="field">Tags: </span>
+    </div>
+    <div id="dependsDiv" style="padding-left: 10px; padding-bottom: 8px;">
+        <span class="field">Depends on: </span></br>
+        <ul id="depends"></ul> 
+    </div>
+    <div id="usedDiv" style="padding-left: 10px; padding-bottom: 8px;">
+        <span class="field">Used by: </span></br>
+        <ul id="used"></ul> 
+    </div>
+    </body>
+    <script>
+        var stringToColor = function(str) {
+            var hash = 0;
+            for(var i=0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 3) - hash);
+            }
+            var color = Math.abs(hash).toString(16).substring(0, 6);
+            return "#" + '000000'.substring(0, 6 - color.length) + color;
+        }
+
+        var searchPrms = new URLSearchParams(window.location.search);
+        var hash = searchPrms.get('hash');
+        $.getJSON('/index.json', function(data) {
+            Object.entries(data).forEach (([key,value]) => {
+                if (hash === value.hash) {
+                    // type
+                    var type = document.getElementById("type");
+                    type.textContent = value.type;
+                    if (value.type === "list") {
+                        type.classList.add("badge", "list", "big");
+                    }
+                    if (value.type === "macro") {
+                        type.classList.add("badge", "macro", "big");
+                    }
+                    if (value.type === "rule") {
+                        type.classList.add("badge", "rule", "big");
+                    }
+                    // name
+                    document.getElementById("name").textContent = value.name;
+                    // desc
+                    if (value.desc === "" || value.desc === undefined) {
+                        document.getElementById("descDiv").remove();
+                    } else {
+                        document.getElementById("desc").textContent = value.desc;
+                    }
+                    // items
+                    if (value.items === "" || value.items === undefined) {
+                        document.getElementById("itemsDiv").remove();
+                    } else {
+                        document.getElementById("items").textContent = value.items;
+                    }
+                    // condition
+                    if (value.condition === "" || value.condition === undefined) {
+                        document.getElementById("conditionDiv").remove();
+                    } else {
+                        document.getElementById("condition").textContent = value.condition;
+                    }
+                    // output
+                    if (value.output === "" || value.output === undefined) {
+                        document.getElementById("outputDiv").remove();
+                    } else {
+                        document.getElementById("output").textContent = value.output;
+                    }
+                    // status
+                    var status = document.getElementById("status");
+                    if (value.type !== 'rule') {
+                        var elem = document.getElementById("statusDiv");
+                        elem.parentNode.removeChild(elem);
+                    } else {
+                        if (value.status === "true") {
+                            status.textContent = "enabled";
+                            status.classList.add("badge", "enabled")
+                        } else {
+                            status.textContent = "disabled";
+                            status.classList.add("badge", "disabled")
+                        }
+                    }
+                    // tags
+                    if (value.tags === "" || value.tags === null) {
+                        document.getElementById("tagsDiv").remove();
+                    } else {
+                        Object.entries(value.tags).forEach (([key, val]) => {
+                            var c = stringToColor(val);
+                            var element = document.createElement('span');
+                            element.className = "badge tag";
+                            element.style = 'background-color:'+ c + '; margin-right: 2px;'
+                            element.textContent = val;
+                            document.getElementById('tagsDiv').appendChild(element);
+                        });
+                    }
+                    // depends
+                    if (value.dependencies === undefined || value.dependencies === null) {
+                        document.getElementById("dependsDiv").remove();
+                    } else {
+                        Object.values(value.dependencies).forEach ((val) => {
+                            var str = val.split(':');
+                            var ul = document.createElement('ul');
+                            // span type
+                            var spanType = document.createElement('span');
+                            spanType.classList.add("badge", str[0]);
+                            spanType.textContent = str[0];
+                            spanType.style = "margin-right: 4px";
+                            ul.appendChild(spanType);
+                            // span name
+                            var spanName = document.createElement('span');
+                            spanName.style = "font-weight: bold";
+                            spanName.textContent = str[1];
+                            ul.appendChild(spanName);
+                            // link
+                            var a = document.createElement('a');
+                            var link = document.createTextNode('');
+                            var icon = document.createElement('i');
+                            icon.classList.add("bi", "bi-binoculars");
+                            a.appendChild(icon);
+                            a.appendChild(link);
+                            a.style = "margin-left: 4px";
+                            a.href = "./rule.html?hash=" + str[2];
+                            ul.appendChild(a);
+                            document.getElementById('depends').appendChild(ul);
+                        });
+                    }
+                    // usedby
+                    if (value.used_by === undefined || value.used_by === null) {
+                        document.getElementById("usedDiv").remove();
+                    } else {
+                        Object.values(value.used_by).forEach ((val) => {
+                            var str = val.split(':');
+                            var ul = document.createElement('ul');
+                            // span type
+                            var spanType = document.createElement('span');
+                            spanType.classList.add("badge", str[0]);
+                            spanType.textContent = str[0];
+                            spanType.style = "margin-right: 4px";
+                            ul.appendChild(spanType);
+                            // span name
+                            var spanName = document.createElement('span');
+                            spanName.style = "font-weight: bold";
+                            spanName.textContent = str[1];
+                            ul.appendChild(spanName);
+                            // link
+                            var a = document.createElement('a');
+                            var link = document.createTextNode('');
+                            var icon = document.createElement('i');
+                            icon.classList.add("bi", "bi-binoculars");
+                            a.appendChild(icon);
+                            a.appendChild(link);
+                            a.style = "margin-left: 4px";
+                            a.href = "./rule.html?hash=" + str[2];
+                            ul.appendChild(a);
+                            document.getElementById('used').appendChild(ul);
+                        });
+                    }
+                }
+            });
+        });
+    </script>
+</html>
