@@ -64,7 +64,7 @@
     </head>
     <body>
     <div>
-        <a href="../index.html"><img src="https://sysdig.com/wp-content/uploads/2018/10/Falco-horizontal-logo-teal_2x.png" height="55" alt="falco logo"></a>
+        <a href="./index.html"><img src="https://sysdig.com/wp-content/uploads/2018/10/Falco-horizontal-logo-teal_2x.png" height="55" alt="falco logo"></a>
     </div>
     <div style="padding-left: 10px; padding-bottom: 8px;">
         <span class="field">Type: </span><span id="type"></span>
@@ -120,7 +120,7 @@
 
         var searchPrms = new URLSearchParams(window.location.search);
         var hash = searchPrms.get('hash');
-        $.getJSON('/index.json', function(data) {
+        $.getJSON('./index.json', function(data) {
             Object.entries(data).forEach (([key,value]) => {
                 if (hash === value.hash) {
                     // type
