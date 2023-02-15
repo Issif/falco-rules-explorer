@@ -128,7 +128,7 @@
         }
         var headerstatus = searchPrms.get('status');
         status = ".*"
-        if (headerstatus != null && headerstatus !== "all" ) {
+        if (headerstatus != null && headerstatus !== "all" && type !== "list" && type !== "macro" ) {
             status = headerstatus
         }
         $(document).ready(function() {
