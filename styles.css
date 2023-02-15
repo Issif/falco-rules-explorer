@@ -11,7 +11,7 @@
     font-weight: bold;
     background: #f4f4f4;
     border: 1px solid #ddd;
-    padding: 4px 2px 2px 4px;
+    padding: 4px;
 }
 .btn {
     padding-bottom: 15px;
@@ -34,7 +34,9 @@
 .tag {
     margin-right: 2px;
 }
-a:link { text-decoration: none; }
+a:link { 
+    text-decoration: none;
+}
 .form-select {
     margin-left: 16px;
     margin-bottom: 5px;
