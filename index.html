@@ -119,16 +119,17 @@
 
         var searchPrms = new URLSearchParams(window.location.search);
         var search = searchPrms.get('search');
-        if (search == null) {
+        if (search === null) {
             search = ""
         }
         var type = searchPrms.get('type');
-        if (type == null || type == "all") {
+        if (type === null || type === "all") {
             type = ".*"
         }
-        var status = searchPrms.get('status');
-        if (status == null || status == "all" || type !== "rule") {
-            status = ".*"
+        var headerstatus = searchPrms.get('status');
+        status = ".*"
+        if (headerstatus != null && headerstatus !== "all" ) {
+            status = headerstatus
         }
         $(document).ready(function() {
             $('#rules').DataTable({
