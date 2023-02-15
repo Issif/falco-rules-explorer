@@ -30,6 +30,7 @@ type rule struct {
 	Desc                  string                  `yaml:"desc" json:"desc,omitempty"`
 	Output                string                  `yaml:"output" json:"output,omitempty"`
 	Priority              string                  `yaml:"priority" json:"priority,omitempty"`
+	Source                string                  `yaml:"source" json:"source,omitempty"`
 	Tags                  []string                `yaml:"tags" json:"tags"`
 	Enabled               string                  `yaml:"enabled" json:"enabled"`
 	Dependencies          []string                `json:"dependencies,omitempty"`
@@ -95,6 +96,9 @@ func main() {
 		for _, j := range v {
 			if j == nil {
 				continue
+			}
+			if j.Source == "" && j.RType == "rule" {
+				j.Source = "syscalls"
 			}
 			if j.Macro == "" && j.List == "" && j.Rule == "" {
 				continue

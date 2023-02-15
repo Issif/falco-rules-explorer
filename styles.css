@@ -4,9 +4,6 @@
 .dataTables_length {
     padding-left: 10px;
 }
-.big {
-    font-size: 105%;
-}
 .name {
     font-weight: bold;
     background: #f4f4f4;
@@ -60,4 +57,28 @@ a:link {
 }
 .field {
     font-weight: bold;
+}
+.debug {
+    background-color: #C62828;
+}
+.alert {
+    background-color: #D32F2F;
+}
+.critical {
+    background-color: #E53935;
+}
+.error {
+    background-color: #FF5252;
+}
+.warning {
+    background-color: #FB8C00;
+}
+.notice {
+    background-color: #1976D2;
+}
+.info{
+    background-color: #03A9F4;
+}
+.debug {
+    background-color: #29B6F6;
 }

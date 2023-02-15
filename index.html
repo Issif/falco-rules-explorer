@@ -13,6 +13,7 @@
     <script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/1.12.1/js/dataTables.bootstrap5.min.js"></script>
+    <script type="text/javascript" src="./utils.js"></script>
     </head>
     <body>
     <div>
@@ -21,6 +22,12 @@
     <div id="types" style="padding-left: 10px;">
         Type:
     </div>
+    <div id="priorities" style="padding-left: 10px;">
+        Priority:
+    </div>
+    <div id="sources" style="padding-left: 10px;">
+        Source:
+    </div>
     <div id="statuses" style="padding-left: 10px;">
         Status:
     </div>
@@ -28,6 +35,8 @@
         <thead>
             <tr>
                 <th>Type</th>
+                <th>Priority</th>
+                <th>Source</th>
                 <th>Name</th>
                 <th>File</th>
                 <th>Tags</th>
@@ -37,7 +46,8 @@
     </table>
     </body>
     <script>
-        const types = ['all', 'list', 'macro', 'rule']
+        const types = ['all', 'list', 'macro', 'rule'];
+        const priorities = ['all', 'DEBUG', 'INFO', 'NOTICE', 'WARNING', 'ERROR', 'CRITICAL', 'ALERT'];
         types.forEach ((item) => {
             var searchPrms = new URLSearchParams(window.location.search);
             var selected = searchPrms.get('type');
@@ -51,6 +61,45 @@
             element.text = item;
             element.href = "?"+searchPrms.toString();
             document.getElementById('types').appendChild(element);
+        });
+        var sources = [];
+        $.getJSON('./index.json', function(data) {
+            Object.values(data).forEach ((value) => {
+                if (value.source === undefined) {
+                    return "";
+                }
+                sources.push(value.source);
+            });
+            var s = ["all"];
+            sources = s.concat([...new Set(sources)]);
+            Object.values(sources).forEach ((value) => {
+                var searchPrms = new URLSearchParams(window.location.search);
+                var selected = searchPrms.get('source');
+                searchPrms.set('source', value);
+                var element = document.createElement('a');
+                element.className = "btn btn-outline-primary btn-sm";
+                if (selected == value) {
+                    element.className = "btn btn-primary btn-sm";
+                }
+                element.style = "margin: 5px; padding-top: 8px; padding-bottom: 10px;"
+                element.text = value;
+                element.href = "?"+searchPrms.toString();
+                document.getElementById('sources').appendChild(element);
+            });
+        });
+        priorities.forEach ((item) => {
+            var searchPrms = new URLSearchParams(window.location.search);
+            var selected = searchPrms.get('priority');
+            searchPrms.set('priority', item);
+            var element = document.createElement('a');
+            element.className = "btn btn-outline-primary btn-sm";
+            if (selected == item) {
+                element.className = "btn btn-primary btn-sm";
+            }
+            element.style = "margin: 5px; padding-top: 8px; padding-bottom: 10px;"
+            element.text = item;
+            element.href = "?"+searchPrms.toString();
+            document.getElementById('priorities').appendChild(element);
         });
         const statuses = ['all', 'disabled', 'enabled']
         statuses.forEach ((item) => {
@@ -68,15 +117,6 @@
             document.getElementById('statuses').appendChild(element);
         });
 
-        var stringToColor = function(str) {
-            var hash = 0;
-            for(var i=0; i < str.length; i++) {
-                hash = str.charCodeAt(i) + ((hash << 3) - hash);
-            }
-            var color = Math.abs(hash).toString(16).substring(0, 6);
-            return "#" + '000000'.substring(0, 6 - color.length) + color;
-        }
-
         var searchPrms = new URLSearchParams(window.location.search);
         var search = searchPrms.get('search');
         if (search === null) {
@@ -86,8 +126,18 @@
         if (type === null || type === "all") {
             type = ".*"
         }
+        var headerpriority = searchPrms.get('priority');
+        var priority = ".*"
+        if (headerpriority != null && headerpriority !== "all" && type !== "list" && type !== "macro" ) {
+            priority = headerpriority
+        }
+        var headersource = searchPrms.get('source');
+        var source = ".*"
+        if (headersource != null && headersource !== "all" && type !== "list" && type !== "macro" ) {
+            source = headersource
+        }
         var headerstatus = searchPrms.get('status');
-        status = ".*"
+        var status = ".*"
         if (headerstatus != null && headerstatus !== "all" && type !== "list" && type !== "macro" ) {
             status = headerstatus
         }
@@ -99,6 +149,8 @@
                 },
                 "searchCols": [
                     { "search": type, "regex": true },
+                    { "search": priority, "regex": true },
+                    { "search": source, "regex": true },
                     null,
                     null,
                     null,
@@ -123,6 +175,23 @@
                             return '<span class="badge">'+data+'</span>';
                         },
                     },
+                    { "data" : "priority",
+                        render: function (data, type, row, meta) {
+                            if (row['type'] !== 'rule') {
+                                return '';
+                            }
+                            return '<span class="badge '+ data.toLowerCase() +'">'+data+'</span>';
+                        },
+                    },
+                    { "data" : "source",
+                        render: function (data, type, row, meta) {
+                            if (row['type'] !== 'rule') {
+                                return '';
+                            }
+                            var c = stringToColor(data);
+                            return '<span class="badge tag" style="background-color:'+ c +';">'+data+'</span>';
+                        },
+                    },
                     { "data" : "name",
                         "width": "33%",
                         render: function (data, type, row, meta) {
@@ -131,6 +200,7 @@
                         },
                     },
                     { "data" : "file_name",
+                        "width": "15%",
                         render: function (data, type, row, meta) {
                             return '<a href="' + row['permalink'] + '"><i class="bi bi-file-earmark"></i> ' + data + '</a>';
                         },

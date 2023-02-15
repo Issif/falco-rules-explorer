@@ -13,6 +13,7 @@
     <script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/1.12.1/js/dataTables.bootstrap5.min.js"></script>
+    <script type="text/javascript" src="./utils.js"></script>
     </head>
     <body>
     <div>
@@ -20,6 +21,9 @@
     </div>
     <div style="padding-left: 10px; padding-bottom: 10px;">
         <span class="field">Type: </span><span id="type"></span>
+    </div>
+    <div id="priorityDiv" style="padding-left: 10px; padding-bottom: 10px;">
+        <span class="field">Priority: </span><span id="priority"></span>
     </div>
     <div style="padding-left: 10px; padding-bottom: 8px;">
         <span class="field">Name: </span><span id="name" class="name"></span>
@@ -51,6 +55,13 @@
     <div id="statusDiv" style="padding-left: 10px; padding-bottom: 8px;">
         <span class="field">Status: </span><span id="status"></span>
     </div>
+    <div id="requiredversionDiv" style="padding-left: 10px; padding-bottom: 8px;">
+        <span class="field">Required engine version: </span><span id="requiredversion"></span>
+    </div>
+    <div id="requiredpluginsDiv" style="padding-left: 10px;">
+        <span class="field">Required plugins: </span></br>
+        <ul id="requiredplugins"></ul> 
+    </div>
     <div id="tagsDiv" style="padding-left: 10px; padding-bottom: 8px;">
         <span class="field">Tags: </span>
     </div>
@@ -64,15 +75,6 @@
     </div>
     </body>
     <script>
-        var stringToColor = function(str) {
-            var hash = 0;
-            for(var i=0; i < str.length; i++) {
-                hash = str.charCodeAt(i) + ((hash << 3) - hash);
-            }
-            var color = Math.abs(hash).toString(16).substring(0, 6);
-            return "#" + '000000'.substring(0, 6 - color.length) + color;
-        }
-
         var searchPrms = new URLSearchParams(window.location.search);
         var hash = searchPrms.get('hash');
         $.getJSON('./index.json', function(data) {
@@ -82,13 +84,20 @@
                     var type = document.getElementById("type");
                     type.textContent = value.type;
                     if (value.type === "list") {
-                        type.classList.add("badge", "list", "big");
+                        type.classList.add("badge", "list");
                     }
                     if (value.type === "macro") {
-                        type.classList.add("badge", "macro", "big");
+                        type.classList.add("badge", "macro");
                     }
                     if (value.type === "rule") {
-                        type.classList.add("badge", "rule", "big");
+                        type.classList.add("badge", "rule");
+                    }
+                    // priority
+                    if (value.priority === "" || value.priority === undefined) {
+                        document.getElementById("priorityDiv").remove();
+                    } else {
+                        document.getElementById("priority").textContent = value.priority;
+                        document.getElementById("priority").classList.add("badge", value.priority.toLowerCase());
                     }
                     // name
                     document.getElementById("name").textContent = value.name;
@@ -131,11 +140,36 @@
                             status.classList.add("badge", "disabled")
                         }
                     }
+                    // required_version
+                    if (value.required_engine_version === "" || value.required_engine_version === undefined) {
+                        document.getElementById("requiredversionDiv").remove();
+                    } else {
+                        document.getElementById("requiredversion").textContent = value.required_engine_version;
+                    }
+                    // required_plugins
+                    if (value.required_plugin_versions === null || value.required_plugin_versions === undefined) {
+                        document.getElementById("requiredpluginsDiv").remove();
+                    } else {
+                        Object.values(value.required_plugin_versions).forEach ((val) => {
+                            var ul = document.createElement('ul');
+                            // span name
+                            var span = document.createElement('span');
+                            span.style = "font-weight: bold";
+                            span.textContent = val.name;
+                            span.style = "margin-right: 4px";
+                            ul.appendChild(span);
+                            // span version
+                            span = document.createElement('span');
+                            span.textContent = "("+val.version+")";
+                            ul.appendChild(span);
+                            document.getElementById('requiredplugins').appendChild(ul);
+                        });
+                    }
                     // tags
                     if (value.tags === "" || value.tags === null) {
                         document.getElementById("tagsDiv").remove();
                     } else {
-                        Object.entries(value.tags).forEach (([key, val]) => {
+                        Object.values(value.tags).forEach ((val) => {
                             var c = stringToColor(val);
                             var element = document.createElement('span');
                             element.className = "badge tag";
