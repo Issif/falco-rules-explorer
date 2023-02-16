@@ -65,7 +65,6 @@ type Index struct {
 var (
 	rulesFileURL = []string{
 		"https://github.com/falcosecurity/rules/blob/main/rules/falco_rules.yaml",
-		"https://github.com/falcosecurity/rules/blob/main/rules/falco_rules.yaml",
 		"https://github.com/falcosecurity/rules/blob/main/rules/application_rules.yaml",
 		"https://github.com/falcosecurity/plugins/blob/master/plugins/k8saudit/rules/k8s_audit_rules.yaml",
 		"https://github.com/falcosecurity/plugins/blob/master/plugins/cloudtrail/rules/aws_cloudtrail_rules.yaml",
@@ -82,7 +81,7 @@ func init() {
 }
 
 func main() {
-	// downloadRuleFiles(rulesFileURL)
+	downloadRuleFiles(rulesFileURL)
 
 	for _, i := range rulesFileURL {
 		var v Rules
