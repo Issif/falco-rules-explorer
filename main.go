@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
@@ -63,12 +64,13 @@ type Index struct {
 
 var (
 	rulesFileURL = []string{
-		"https://raw.githubusercontent.com/falcosecurity/rules/main/rules/falco_rules.yaml",
-		"https://raw.githubusercontent.com/falcosecurity/rules/main/rules/application_rules.yaml",
-		"https://raw.githubusercontent.com/falcosecurity/plugins/master/plugins/k8saudit/rules/k8s_audit_rules.yaml",
-		"https://raw.githubusercontent.com/falcosecurity/plugins/master/plugins/cloudtrail/rules/aws_cloudtrail_rules.yaml",
-		"https://raw.githubusercontent.com/falcosecurity/plugins/master/plugins/github/rules/github.yaml",
-		"https://raw.githubusercontent.com/falcosecurity/plugins/master/plugins/okta/rules/okta_rules.yaml",
+		"https://github.com/falcosecurity/rules/blob/main/rules/falco_rules.yaml",
+		"https://github.com/falcosecurity/rules/blob/main/rules/falco_rules.yaml",
+		"https://github.com/falcosecurity/rules/blob/main/rules/application_rules.yaml",
+		"https://github.com/falcosecurity/plugins/blob/master/plugins/k8saudit/rules/k8s_audit_rules.yaml",
+		"https://github.com/falcosecurity/plugins/blob/master/plugins/cloudtrail/rules/aws_cloudtrail_rules.yaml",
+		"https://github.com/falcosecurity/plugins/blob/master/plugins/github/rules/github.yaml",
+		"https://github.com/falcosecurity/plugins/blob/master/plugins/okta/rules/okta_rules.yaml",
 	}
 )
 
@@ -90,9 +92,9 @@ func main() {
 		checkErr(yaml.Unmarshal(source, &v))
 		setHashNameType(v)
 		setEnabled(v)
-		setPermaLinkFileName(v, i)
 		setRequiredEngineVersion(v)
 		setRequiredPluginVersion(v)
+		setPermaLinkFileName(v, i)
 		for _, j := range v {
 			if j == nil {
 				continue
@@ -205,7 +207,9 @@ func setPermaLinkFileName(r Rules, f string) {
 			continue
 		}
 		i.FileName = getFileName(f)
-		i.Permalink = f
+		if i.RType == "rule" || i.RType == "macro" || i.RType == "list" {
+			i.Permalink = f + findLine(i.FileName, i.RType, i.Name)
+		}
 	}
 }
 
@@ -266,7 +270,7 @@ func downloadRuleFiles(f []string) {
 		checkErr(err)
 		defer out.Close()
 
-		resp, err := http.Get(i)
+		resp, err := http.Get(getRawURL(i))
 		checkErr(err)
 
 		defer resp.Body.Close()
@@ -274,6 +278,33 @@ func downloadRuleFiles(f []string) {
 		_, err = io.Copy(out, resp.Body)
 		checkErr(err)
 	}
+}
+
+func getRawURL(s string) string {
+	s = strings.ReplaceAll(s, "github.com", "raw.githubusercontent.com")
+	s = strings.ReplaceAll(s, "blob/", "")
+	fmt.Println(s)
+	return s
+}
+
+func findLine(file, rtype, name string) string {
+	f, err := os.Open("./rules/" + file)
+	if err != nil {
+		return ""
+	}
+	defer f.Close()
+	scanner := bufio.NewScanner(f)
+	line := 1
+	for scanner.Scan() {
+		if strings.Contains(scanner.Text(), fmt.Sprintf("- %v: %v", rtype, name)) {
+			return fmt.Sprintf("#L%v", line)
+		}
+		line++
+	}
+	if err := scanner.Err(); err != nil {
+		return ""
+	}
+	return ""
 }
 
 func getFileName(s string) string {

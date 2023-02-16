@@ -19,59 +19,64 @@
     <div>
         <a href="./index.html"><img src="https://sysdig.com/wp-content/uploads/2018/10/Falco-horizontal-logo-teal_2x.png" height="55" alt="falco logo"></a>
     </div>
-    <div style="padding-left: 10px; padding-bottom: 10px;">
-        <span class="field">Type: </span><span id="type"></span>
-    </div>
-    <div id="priorityDiv" style="padding-left: 10px; padding-bottom: 10px;">
-        <span class="field">Priority: </span><span id="priority"></span>
-    </div>
-    <div style="padding-left: 10px; padding-bottom: 8px;">
-        <span class="field">Name: </span><span id="name" class="name"></span>
-    </div>
-    <div id="descDiv" style="padding-left: 10px; padding-bottom: 8px;">
-        <span class="field">Desc: </span>
-        <div style="padding-left: 55px; padding-bottom: 8px;">
-            <span id="desc"></span>
+    <div style="margin-left: 10px; width: 60%;">
+        <div style="padding-left: 10px; padding-bottom: 10px;">
+            <span class="field">Type: </span><span id="type"></span>
         </div>
-    </div>
-    <div id="itemsDiv" style="padding-left: 10px; padding-bottom: 8px;">
-        <span class="field">Items:</span> </br>
-        <div style="padding-left: 55px; padding-bottom: 8px;">
-            <span id="items" class="code"></span>
+        <div id="priorityDiv" style="padding-left: 10px; padding-bottom: 10px;">
+            <span class="field">Priority: </span><span id="priority"></span>
         </div>
-    </div>
-    <div id="conditionDiv" style="padding-left: 10px; padding-bottom: 8px;">
-        <span class="field">Condition:</span> </br>
-        <div style="padding-left: 55px;">
-            <span id="condition" class="code"></span>
+        <div style="padding-left: 10px; padding-bottom: 8px;">
+            <span class="field">Name: </span><span id="name" class="name"></span>
         </div>
-    </div>
-    <div id="outputDiv" style="padding-left: 10px;">
-        <span class="field">Output:</span></br>
-        <div style="padding-left: 55px; padding-bottom: 8px;">
-            <span id="output" class="code"></span>
+        <div id="descDiv" style="padding-left: 10px; padding-bottom: 8px;">
+            <span class="field">Desc: </span>
+            <div style="padding-left: 55px; padding-bottom: 8px;">
+                <span id="desc"></span>
+            </div>
         </div>
-    </div>
-    <div id="statusDiv" style="padding-left: 10px; padding-bottom: 8px;">
-        <span class="field">Status: </span><span id="status"></span>
-    </div>
-    <div id="requiredversionDiv" style="padding-left: 10px; padding-bottom: 8px;">
-        <span class="field">Required engine version: </span><span id="requiredversion"></span>
-    </div>
-    <div id="requiredpluginsDiv" style="padding-left: 10px;">
-        <span class="field">Required plugins: </span></br>
-        <ul id="requiredplugins"></ul> 
-    </div>
-    <div id="tagsDiv" style="padding-left: 10px; padding-bottom: 8px;">
-        <span class="field">Tags: </span>
-    </div>
-    <div id="dependsDiv" style="padding-left: 10px; padding-bottom: 8px;">
-        <span class="field">Depends on: </span></br>
-        <ul id="depends"></ul> 
-    </div>
-    <div id="usedDiv" style="padding-left: 10px; padding-bottom: 8px;">
-        <span class="field">Used by: </span></br>
-        <ul id="used"></ul> 
+        <div id="itemsDiv" style="padding-left: 10px; padding-bottom: 8px;">
+            <span class="field">Items:</span></br>
+            <div style="padding-left: 55px; padding-bottom: 8px;">
+                <span id="items" class="code"></span>
+            </div>
+        </div>
+        <div id="conditionDiv" style="padding-left: 10px; padding-bottom: 8px;">
+            <span class="field">Condition:</span></br>
+            <div style="padding-left: 55px;">
+                <span id="condition" class="code"></span>
+            </div>
+        </div>
+        <div id="outputDiv" style="padding-left: 10px;">
+            <span class="field">Output:</span></br>
+            <div style="padding-left: 55px; padding-bottom: 8px;">
+                <span id="output" class="code"></span>
+            </div>
+        </div>
+        <div id="statusDiv" style="padding-left: 10px; padding-bottom: 8px;">
+            <span class="field">Status: </span><span id="status"></span>
+        </div>
+        <div id="requiredversionDiv" style="padding-left: 10px; padding-bottom: 8px;">
+            <span class="field">Required engine version: </span><span id="requiredversion"></span>
+        </div>
+        <div id="requiredpluginsDiv" style="padding-left: 10px;">
+            <span class="field">Required plugins:</span></br>
+            <ul id="requiredplugins"></ul>
+        </div>
+        <div id="tagsDiv" style="padding-left: 10px; padding-bottom: 8px;">
+            <span class="field">Tags: </span>
+        </div>
+        <div id="dependsDiv" style="padding-left: 10px; padding-bottom: 8px;">
+            <span class="field">Depends on:</span></br>
+            <ul id="depends"></ul>
+        </div>
+        <div id="usedDiv" style="padding-left: 10px; padding-bottom: 8px;">
+            <span class="field">Used by:</span></br>
+            <ul id="used"></ul>
+        </div>
+        <div id="fileDiv" style="padding-left: 10px; padding-bottom: 8px;">
+            <span class="field">File: </span><span id="file"></span>
+        </div>
     </div>
     </body>
     <script>
@@ -239,6 +244,21 @@
                             ul.appendChild(a);
                             document.getElementById('used').appendChild(ul);
                         });
+                    }
+                    // file
+                    if (value.permalink === "" || value.permalink === undefined) {
+                        document.getElementById("fileDiv").remove();
+                    } else {
+                        var a = document.createElement('a');
+                        var link = document.createTextNode(value.file_name);
+                        var icon = document.createElement('i');
+                        icon.classList.add("bi", "bi-file-earmark");
+                        icon.style = "margin-right: 4px;"
+                        a.appendChild(icon);
+                        a.appendChild(link);
+                        a.style = "margin-left: 4px";
+                        a.href = value.permalink;
+                        document.getElementById('file').appendChild(a);
                     }
                 }
             });
