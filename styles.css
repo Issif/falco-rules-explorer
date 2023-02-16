@@ -10,8 +10,8 @@
     border: 1px solid #ddd;
     padding: 4px;
 }
-.btn {
-    padding-bottom: 15px;
+.badge {
+    margin-right: 4px;
 }
 .list {
     background-color: #a38104;
@@ -31,7 +31,7 @@
 .tag {
     margin-right: 2px;
 }
-a:link { 
+a:link {
     text-decoration: none;
 }
 .form-select {

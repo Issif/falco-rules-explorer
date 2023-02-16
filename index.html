@@ -46,6 +46,13 @@
     </table>
     </body>
     <script>
+        var url = new URL(window.location);
+        var search = url.searchParams.get('search');
+        if (search == null) {
+            search = "";
+        };
+        window.history.pushState({}, '', url);
+     
         const types = ['all', 'list', 'macro', 'rule'];
         const priorities = ['all', 'DEBUG', 'INFO', 'NOTICE', 'WARNING', 'ERROR', 'CRITICAL', 'ALERT'];
         types.forEach ((item) => {
@@ -163,16 +170,9 @@
                 columns : [
                     { "data" : "type",
                         render: function (data) {
-                            if (data === "list") {
-                                return '<span class="badge list">'+data+'</span>';
-                            }
-                            if (data === "macro") {
-                                return '<span class="badge macro">'+data+'</span>';
-                            }
-                            if (data === "rule") {
-                                return '<span class="badge rule">'+data+'</span>';
-                            }
-                            return '<span class="badge">'+data+'</span>';
+                            var searchPrms = new URLSearchParams(window.location.search);
+                            searchPrms.set('type', data);
+                            return '<span><a href="./index.html?'+searchPrms.toString()+'"><inline class="badge '+data+'">'+data+'</inline></span>'
                         },
                     },
                     { "data" : "priority",
@@ -180,7 +180,9 @@
                             if (row['type'] !== 'rule') {
                                 return '';
                             }
-                            return '<span class="badge '+ data.toLowerCase() +'">'+data+'</span>';
+                            var searchPrms = new URLSearchParams(window.location.search);
+                            searchPrms.set('priority', data);
+                            return '<span><a href="./index.html?'+searchPrms.toString()+'"><inline class="badge '+data.toLowerCase()+'">'+data+'</inline></span>'
                         },
                     },
                     { "data" : "source",
@@ -189,7 +191,9 @@
                                 return '';
                             }
                             var c = stringToColor(data);
-                            return '<span class="badge tag" style="background-color:'+ c +';">'+data+'</span>';
+                            var searchPrms = new URLSearchParams(window.location.search);
+                            searchPrms.set('source', data);
+                            return '<span><a href="./index.html?'+searchPrms.toString()+'"><inline class="badge" style="background-color: '+c+';">'+data+'</inline></span>'
                         },
                     },
                     { "data" : "name",
@@ -213,7 +217,9 @@
                             }
                             Object.entries(data).forEach (([key, value]) => {
                                 var c = stringToColor(value);
-                                t = t + '<span class="badge tag" style="background-color:'+ c +';">'+value+'</span>';
+                                var searchPrms = new URLSearchParams(window.location.search);
+                                searchPrms.set('search', value);
+                                t = t + '<span><a href="./index.html?'+searchPrms.toString()+'"><inline class="badge tag" style="background-color: '+c+';">'+value+'</inline></span>'
                             });
                             return t;
                         },
@@ -223,13 +229,30 @@
                             if (row['type'] !== 'rule') {
                                 return '';
                             }
+                            var status = '';
                             if (data === "false") {
-                                return '<span class="badge disabled">disabled</span>';
+                                status = "disabled";
+                            } else {
+                                status = "enabled";
                             }
-                            return '<span class="badge enabled">enabled</span>';
+                            var searchPrms = new URLSearchParams(window.location.search);
+                            searchPrms.set('status', status);
+                            return '<span><a href="./index.html?'+searchPrms.toString()+'"><inline class="badge '+status+'">'+status+'</inline></span>'
                         },
                     },
                 ]
+            });
+            var element = document.createElement('span');
+            element.id = "clearsearch"
+            element.className = "btn btn-outline-primary btn-sm";
+            element.style = "margin-left: 5px; margin-bottom: 2px";
+            element.textContent = "X";
+            document.getElementById('rules_filter').appendChild(element);
+            $('#clearsearch').on('click', function(event) {
+                var url = new URL(window.location);
+                url.searchParams.delete('search');
+                window.history.pushState({}, '', url);
+                $('#rules').DataTable().search('').draw();
             });
         });
         </script>
