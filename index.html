@@ -196,13 +196,13 @@
                         "width": "33%",
                         render: function (data, type, row, meta) {
                             var url = "./rule.html?hash=" + row['hash']
-                            return '<span class="name"><a href="' + url + '"><i class="bi bi-binoculars"></i> ' + data + '</a></span>';
+                            return '<span class="name"><a href="' + url + '" target="_blank"><i class="bi bi-binoculars"></i> ' + data + '</a></span>';
                         },
                     },
                     { "data" : "file_name",
                         "width": "15%",
                         render: function (data, type, row, meta) {
-                            return '<a href="' + row['permalink'] + '"><i class="bi bi-file-earmark"></i> ' + data + '</a>';
+                            return '<a href="' + row['permalink'] + '" target="_blank"><i class="bi bi-file-earmark"></i> ' + data + '</a>';
                         },
                     },
                     { "data" : "tags",
