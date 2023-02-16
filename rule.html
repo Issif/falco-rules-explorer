@@ -35,6 +35,9 @@
                 <span id="desc"></span>
             </div>
         </div>
+        <div id="sourceDiv" style="padding-left: 10px; padding-bottom: 8px;">
+            <span class="field">Source: </span><span id="source" class="badge tag"></span>
+        </div>
         <div id="itemsDiv" style="padding-left: 10px; padding-bottom: 8px;">
             <span class="field">Items:</span></br>
             <div style="padding-left: 55px; padding-bottom: 8px;">
@@ -112,6 +115,15 @@
                         document.getElementById("descDiv").remove();
                     } else {
                         document.getElementById("desc").textContent = value.desc;
+                    }
+                    // source
+                    if (value.source === "" || value.source === undefined) {
+                        document.getElementById("sourceDiv").remove();
+                    } else {
+                        var c = stringToColor(value.source);
+                        var element = document.getElementById('source');
+                        element.style = 'background-color:'+ c + ';'
+                        element.textContent = value.source;
                     }
                     // items
                     if (value.items === "" || value.items === undefined) {
