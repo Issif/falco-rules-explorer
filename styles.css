@@ -82,3 +82,13 @@ a:link {
 .debug {
     background-color: #29B6F6;
 }
+.bi-x-circle {
+    color: #383c3f; 
+}
+i:hover {
+    color: #0d6efd; 
+}
+.form-control, .form-select {
+    color: #0d6efd;
+    border: 1px solid #0d6efd;
+}

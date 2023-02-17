@@ -244,9 +244,10 @@
             });
             var element = document.createElement('span');
             element.id = "clearsearch"
-            element.className = "btn btn-outline-primary btn-sm";
             element.style = "margin-left: 5px; margin-bottom: 2px";
-            element.textContent = "X";
+            var icon = document.createElement('i');
+            icon.className = "bi bi-x-circle"
+            element.append(icon)
             document.getElementById('rules_filter').appendChild(element);
             $('#clearsearch').on('click', function(event) {
                 var url = new URL(window.location);
