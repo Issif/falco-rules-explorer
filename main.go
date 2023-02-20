@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"regexp"
 	"strings"
+	"sync"
 
 	yaml "gopkg.in/yaml.v3"
 )
@@ -82,97 +84,10 @@ func init() {
 
 func main() {
 	downloadRuleFiles(rulesFileURL)
+	scrapeRuleFiles(rulesFileURL)
+	findDependencies(r)
 
-	for _, i := range rulesFileURL {
-		var v Rules
-		source, err := ioutil.ReadFile("./rules/" + getFileName(i))
-		checkErr(err)
-
-		checkErr(yaml.Unmarshal(source, &v))
-		setHashNameType(v)
-		setEnabled(v)
-		setRequiredEngineVersion(v)
-		setRequiredPluginVersion(v)
-		setPermaLinkFileName(v, i)
-		for _, j := range v {
-			if j == nil {
-				continue
-			}
-			if j.Source == "" && j.RType == "rule" {
-				j.Source = "syscalls"
-			}
-			if j.Macro == "" && j.List == "" && j.Rule == "" {
-				continue
-			}
-			r = append(r, j)
-		}
-	}
-
-	for _, i := range r {
-		if i == nil {
-			continue
-		}
-		if i.Macro != "" {
-			for _, j := range r {
-				if j == nil || i.Hash == j.Hash {
-					continue
-				}
-				if j.List != "" {
-					if strings.Contains(reg.ReplaceAllString(i.Condition, ""), j.List) {
-						i.Dependencies = append(i.Dependencies, "list:"+j.Name+":"+j.Hash)
-					}
-				}
-				if j.Macro != "" {
-					if strings.Contains(reg.ReplaceAllString(i.Condition, ""), j.Macro) {
-						i.Dependencies = append(i.Dependencies, "macro:"+j.Name+":"+j.Hash)
-					}
-					if strings.Contains(reg.ReplaceAllString(j.Condition, ""), i.Macro) {
-						i.UsedBy = append(i.UsedBy, "macro:"+j.Name+":"+j.Hash)
-					}
-				}
-				if j.Rule != "" {
-					if strings.Contains(reg.ReplaceAllString(j.Condition, ""), i.Macro) {
-						i.UsedBy = append(i.UsedBy, "rule:"+j.Name+":"+j.Hash)
-					}
-				}
-			}
-		}
-		if i.Rule != "" {
-			for _, j := range r {
-				if j == nil || i.Hash == j.Hash {
-					continue
-				}
-				if j.List != "" {
-					if strings.Contains(reg.ReplaceAllString(i.Condition, ""), j.List) {
-						i.Dependencies = append(i.Dependencies, "list:"+j.Name+":"+j.Hash)
-					}
-				}
-				if j.Macro != "" {
-					if strings.Contains(reg.ReplaceAllString(i.Condition, ""), j.Macro) {
-						i.Dependencies = append(i.Dependencies, "list:"+j.Name+":"+j.Hash)
-					}
-				}
-			}
-		}
-		if i.List != "" {
-			for _, j := range r {
-				if j == nil || i.Hash == j.Hash {
-					continue
-				}
-				if j.Macro != "" && i.Macro != j.Macro {
-					if strings.Contains(reg.ReplaceAllString(j.Condition, ""), i.List) {
-						i.UsedBy = append(i.UsedBy, "macro:"+j.Name+":"+j.Hash)
-					}
-				}
-				if j.Rule != "" {
-					if strings.Contains(reg.ReplaceAllString(j.Condition, ""), i.List) {
-						i.UsedBy = append(i.UsedBy, "rule:"+j.Name+":"+j.Hash)
-					}
-				}
-			}
-		}
-	}
-
+	log.Println("Generate index.json")
 	j, err := json.Marshal(r)
 	checkErr(err)
 	checkErr(ioutil.WriteFile("./index.json", j, 0644))
@@ -264,26 +179,133 @@ func setRequiredPluginVersion(r Rules) {
 }
 
 func downloadRuleFiles(f []string) {
+	var wg sync.WaitGroup
 	for _, i := range f {
-		out, err := os.Create("./rules/" + getFileName(i))
-		checkErr(err)
-		defer out.Close()
+		log.Printf("Download rules file: %v\n", i)
+		wg.Add(1)
+		go func(f string) {
+			defer wg.Done()
+			out, err := os.Create("./rules/" + getFileName(f))
+			checkErr(err)
+			defer out.Close()
 
-		resp, err := http.Get(getRawURL(i))
-		checkErr(err)
+			resp, err := http.Get(getRawURL(f))
+			checkErr(err)
 
-		defer resp.Body.Close()
+			defer resp.Body.Close()
 
-		_, err = io.Copy(out, resp.Body)
-		checkErr(err)
+			_, err = io.Copy(out, resp.Body)
+			checkErr(err)
+		}(i)
 	}
+	wg.Wait()
 }
 
 func getRawURL(s string) string {
 	s = strings.ReplaceAll(s, "github.com", "raw.githubusercontent.com")
 	s = strings.ReplaceAll(s, "blob/", "")
-	fmt.Println(s)
 	return s
+}
+
+func scrapeRuleFiles(f []string) {
+	var wg sync.WaitGroup
+	for _, i := range rulesFileURL {
+		log.Printf("Scrape items from rules file: %v\n", i)
+		wg.Add(1)
+		go func(f string) {
+			defer wg.Done()
+			var v Rules
+			source, err := ioutil.ReadFile("./rules/" + getFileName(f))
+			checkErr(err)
+
+			checkErr(yaml.Unmarshal(source, &v))
+			setHashNameType(v)
+			setEnabled(v)
+			setRequiredEngineVersion(v)
+			setRequiredPluginVersion(v)
+			setPermaLinkFileName(v, f)
+			for _, j := range v {
+				if j == nil {
+					continue
+				}
+				if j.Macro == "" && j.List == "" && j.Rule == "" {
+					continue
+				}
+				if j.Source == "" && j.RType == "rule" {
+					j.Source = "syscalls"
+				}
+				r = append(r, j)
+			}
+		}(i)
+	}
+	wg.Wait()
+}
+
+func findDependencies(r Rules) {
+	for _, i := range r {
+		if i == nil {
+			continue
+		}
+		if i.Macro != "" {
+			for _, j := range r {
+				if j == nil || i.Hash == j.Hash {
+					continue
+				}
+				if j.List != "" {
+					if strings.Contains(reg.ReplaceAllString(i.Condition, ""), j.List) {
+						i.Dependencies = append(i.Dependencies, "list:"+j.Name+":"+j.Hash)
+					}
+				}
+				if j.Macro != "" {
+					if strings.Contains(reg.ReplaceAllString(i.Condition, ""), j.Macro) {
+						i.Dependencies = append(i.Dependencies, "macro:"+j.Name+":"+j.Hash)
+					}
+					if strings.Contains(reg.ReplaceAllString(j.Condition, ""), i.Macro) {
+						i.UsedBy = append(i.UsedBy, "macro:"+j.Name+":"+j.Hash)
+					}
+				}
+				if j.Rule != "" {
+					if strings.Contains(reg.ReplaceAllString(j.Condition, ""), i.Macro) {
+						i.UsedBy = append(i.UsedBy, "rule:"+j.Name+":"+j.Hash)
+					}
+				}
+			}
+		}
+		if i.Rule != "" {
+			for _, j := range r {
+				if j == nil || i.Hash == j.Hash {
+					continue
+				}
+				if j.List != "" {
+					if strings.Contains(reg.ReplaceAllString(i.Condition, ""), j.List) {
+						i.Dependencies = append(i.Dependencies, "list:"+j.Name+":"+j.Hash)
+					}
+				}
+				if j.Macro != "" {
+					if strings.Contains(reg.ReplaceAllString(i.Condition, ""), j.Macro) {
+						i.Dependencies = append(i.Dependencies, "list:"+j.Name+":"+j.Hash)
+					}
+				}
+			}
+		}
+		if i.List != "" {
+			for _, j := range r {
+				if j == nil || i.Hash == j.Hash {
+					continue
+				}
+				if j.Macro != "" && i.Macro != j.Macro {
+					if strings.Contains(reg.ReplaceAllString(j.Condition, ""), i.List) {
+						i.UsedBy = append(i.UsedBy, "macro:"+j.Name+":"+j.Hash)
+					}
+				}
+				if j.Rule != "" {
+					if strings.Contains(reg.ReplaceAllString(j.Condition, ""), i.List) {
+						i.UsedBy = append(i.UsedBy, "rule:"+j.Name+":"+j.Hash)
+					}
+				}
+			}
+		}
+	}
 }
 
 func findLine(file, rtype, name string) string {
