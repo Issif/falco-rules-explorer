@@ -39,19 +39,25 @@
             <span class="field">Source: </span><span id="source" class="badge tag"></span>
         </div>
         <div id="itemsDiv" style="padding-left: 10px; padding-bottom: 8px;">
-            <span class="field">Items:</span></br>
+            <span class="field">Items:</span><br>
             <div style="padding-left: 55px; padding-bottom: 8px;">
                 <span id="items" class="code"></span>
             </div>
         </div>
+        <div id="commentsDiv" style="padding-left: 10px; padding-bottom: 8px;">
+            <span class="field">Comments:</span><br>
+            <div style="padding-left: 55px;">
+                <span id="comment" class="code"></span>
+            </div>
+        </div>
         <div id="conditionDiv" style="padding-left: 10px; padding-bottom: 8px;">
-            <span class="field">Condition:</span></br>
+            <span class="field">Condition:</span><br>
             <div style="padding-left: 55px;">
                 <span id="condition" class="code"></span>
             </div>
         </div>
         <div id="outputDiv" style="padding-left: 10px;">
-            <span class="field">Output:</span></br>
+            <span class="field">Output:</span><br>
             <div style="padding-left: 55px; padding-bottom: 8px;">
                 <span id="output" class="code"></span>
             </div>
@@ -63,18 +69,18 @@
             <span class="field">Required engine version: </span><span id="requiredversion"></span>
         </div>
         <div id="requiredpluginsDiv" style="padding-left: 10px;">
-            <span class="field">Required plugins:</span></br>
+            <span class="field">Required plugins:</span><br>
             <ul id="requiredplugins"></ul>
         </div>
         <div id="tagsDiv" style="padding-left: 10px; padding-bottom: 8px;">
             <span class="field">Tags: </span>
         </div>
         <div id="dependsDiv" style="padding-left: 10px; padding-bottom: 8px;">
-            <span class="field">Depends on:</span></br>
+            <span class="field">Depends on:</span><br>
             <ul id="depends"></ul>
         </div>
         <div id="usedDiv" style="padding-left: 10px; padding-bottom: 8px;">
-            <span class="field">Used by:</span></br>
+            <span class="field">Used by:</span><br>
             <ul id="used"></ul>
         </div>
         <div id="fileDiv" style="padding-left: 10px; padding-bottom: 8px;">
@@ -131,11 +137,18 @@
                     } else {
                         document.getElementById("items").textContent = value.items;
                     }
+                    // comments
+                    if (value.comment === "" || value.comment === undefined) {
+                        document.getElementById("commentsDiv").remove();
+                    } else {
+                        c = value.comment.replaceAll("\n", "<br>")
+                        document.getElementById("comment").innerHTML = c;
+                    }
                     // condition
                     if (value.condition === "" || value.condition === undefined) {
                         document.getElementById("conditionDiv").remove();
                     } else {
-                        document.getElementById("condition").textContent = value.condition;
+                           document.getElementById("condition").innerHTML = value.condition;
                     }
                     // output
                     if (value.output === "" || value.output === undefined) {

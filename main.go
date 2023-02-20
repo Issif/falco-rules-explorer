@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
@@ -20,7 +19,9 @@ import (
 type Rules []*rule
 
 type rule struct {
+	line                  int
 	FileName              string                  `json:"file_name,omitempty"`
+	Comment               string                  `json:"comment"`
 	Permalink             string                  `json:"permalink,omitempty"`
 	RequiredEngineVersion string                  `yaml:"required_engine_version" json:"required_engine_version,omitempty"`
 	RequiredPluginVersion []RequiredPluginVersion `yaml:"required_plugin_versions" json:"required_plugin_versions,omitempty" `
@@ -83,7 +84,7 @@ func init() {
 }
 
 func main() {
-	downloadRuleFiles(rulesFileURL)
+	// downloadRuleFiles(rulesFileURL)
 	scrapeRuleFiles(rulesFileURL)
 	findDependencies(r)
 
@@ -115,14 +116,15 @@ func setHashNameType(r Rules) {
 	}
 }
 
-func setPermaLinkFileName(r Rules, f string) {
+func setLinePermaLinkFileName(r Rules, f string, n *[]yaml.Node) {
 	for _, i := range r {
 		if i == nil {
 			continue
 		}
 		i.FileName = getFileName(f)
+		i.line = findLine(i.RType, i.Name, n)
 		if i.RType == "rule" || i.RType == "macro" || i.RType == "list" {
-			i.Permalink = f + findLine(i.FileName, i.RType, i.Name)
+			i.Permalink = fmt.Sprintf("%v#L%v", f, i.line)
 		}
 	}
 }
@@ -178,6 +180,20 @@ func setRequiredPluginVersion(r Rules) {
 	}
 }
 
+func setComment(r Rules, n *[]yaml.Node) {
+	for _, i := range r {
+		if i == nil {
+			continue
+		}
+		for _, j := range *n {
+			if (i.line == j.Line) && j.HeadComment != "" {
+				s := strings.Split(j.HeadComment, "\n\n")
+				i.Comment = s[len(s)-1]
+			}
+		}
+	}
+}
+
 func downloadRuleFiles(f []string) {
 	var wg sync.WaitGroup
 	for _, i := range f {
@@ -215,15 +231,18 @@ func scrapeRuleFiles(f []string) {
 		go func(f string) {
 			defer wg.Done()
 			var v Rules
+			var n []yaml.Node
 			source, err := ioutil.ReadFile("./rules/" + getFileName(f))
 			checkErr(err)
 
 			checkErr(yaml.Unmarshal(source, &v))
+			checkErr(yaml.Unmarshal(source, &n))
 			setHashNameType(v)
 			setEnabled(v)
 			setRequiredEngineVersion(v)
 			setRequiredPluginVersion(v)
-			setPermaLinkFileName(v, f)
+			setLinePermaLinkFileName(v, f, &n)
+			setComment(v, &n)
 			for _, j := range v {
 				if j == nil {
 					continue
@@ -308,24 +327,15 @@ func findDependencies(r Rules) {
 	}
 }
 
-func findLine(file, rtype, name string) string {
-	f, err := os.Open("./rules/" + file)
-	if err != nil {
-		return ""
-	}
-	defer f.Close()
-	scanner := bufio.NewScanner(f)
-	line := 1
-	for scanner.Scan() {
-		if strings.Contains(scanner.Text(), fmt.Sprintf("- %v: %v", rtype, name)) {
-			return fmt.Sprintf("#L%v", line)
+func findLine(rtype, name string, nodes *[]yaml.Node) int {
+	for _, i := range *nodes {
+		if len(i.Content) >= 2 {
+			if i.Content[0].Value == rtype && i.Content[1].Value == name {
+				return i.Line
+			}
 		}
-		line++
 	}
-	if err := scanner.Err(); err != nil {
-		return ""
-	}
-	return ""
+	return 0
 }
 
 func getFileName(s string) string {
