@@ -19,7 +19,8 @@ import (
 type Rules []*rule
 
 type rule struct {
-	line                  int
+	firstLine             int
+	lastLine              int
 	FileName              string                  `json:"file_name,omitempty"`
 	Comment               string                  `json:"comment"`
 	Permalink             string                  `json:"permalink,omitempty"`
@@ -122,9 +123,9 @@ func setLinePermaLinkFileName(r Rules, f string, n *[]yaml.Node) {
 			continue
 		}
 		i.FileName = getFileName(f)
-		i.line = findLine(i.RType, i.Name, n)
+		i.firstLine, i.lastLine = findLines(i.RType, i.Name, n)
 		if i.RType == "rule" || i.RType == "macro" || i.RType == "list" {
-			i.Permalink = fmt.Sprintf("%v#L%v", f, i.line)
+			i.Permalink = fmt.Sprintf("%v#L%v,L%v", f, i.firstLine, i.lastLine)
 		}
 	}
 }
@@ -186,7 +187,7 @@ func setComment(r Rules, n *[]yaml.Node) {
 			continue
 		}
 		for _, j := range *n {
-			if (i.line == j.Line) && j.HeadComment != "" {
+			if (i.firstLine == j.Line) && j.HeadComment != "" {
 				s := strings.Split(j.HeadComment, "\n\n")
 				i.Comment = s[len(s)-1]
 			}
@@ -327,15 +328,18 @@ func findDependencies(r Rules) {
 	}
 }
 
-func findLine(rtype, name string, nodes *[]yaml.Node) int {
+func findLines(rtype, name string, nodes *[]yaml.Node) (int, int) {
+	var firstLine, lastLine int
 	for _, i := range *nodes {
-		if len(i.Content) >= 2 {
+		if len(i.Content) != 0 {
 			if i.Content[0].Value == rtype && i.Content[1].Value == name {
-				return i.Line
+				firstLine = i.Line
+				lastLine = i.Content[len(i.Content)-1].Line
+				return firstLine, lastLine
 			}
 		}
 	}
-	return 0
+	return 0, 0
 }
 
 func getFileName(s string) string {
