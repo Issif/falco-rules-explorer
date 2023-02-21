@@ -122,9 +122,9 @@ func setLinePermaLinkFileName(r Rules, f string, n *[]yaml.Node) {
 		if i == nil {
 			continue
 		}
-		i.FileName = getFileName(f)
-		i.firstLine, i.lastLine = findLines(i.RType, i.Name, n)
 		if i.RType == "rule" || i.RType == "macro" || i.RType == "list" {
+			i.FileName = getFileName(f)
+			i.firstLine, i.lastLine = findLines(i.RType, i.Name, n)
 			i.Permalink = fmt.Sprintf("%v#L%v,L%v", f, i.firstLine, i.lastLine)
 		}
 	}
