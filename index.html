@@ -18,6 +18,10 @@
     <body>
     <div>
         <a href="./index.html"><img src="https://sysdig.com/wp-content/uploads/2018/10/Falco-horizontal-logo-teal_2x.png" height="55" alt="falco logo"></a>
+        <div id="sidenav" class="sidenav">
+            <a href="javascript:void(0)" style="float: right; margin-right: 10px; font-size: 150%;" class="closebtn" onclick="closeNav()"><i class="bi bi-x-circle"></i></a>
+            <embed id="panel" type="text/html" src="" width="1024" height="1024"> 
+        </div>
     </div>
     <div id="types" style="padding-left: 10px;">
         Type:
@@ -46,6 +50,15 @@
     </table>
     </body>
     <script>
+        function openNav(hash) {
+            document.getElementById("panel").src = "rule.html?hash="+hash;
+            document.getElementById("sidenav").style.width = "800px";
+        }
+
+        function closeNav() {
+            document.getElementById("sidenav").style.width = "0";
+        }
+
         var url = new URL(window.location);
         var search = url.searchParams.get('search');
         if (search == null) {
@@ -194,13 +207,13 @@
                             var searchPrms = new URLSearchParams(window.location.search);
                             searchPrms.set('source', data);
                             return '<span><a href="./index.html?'+searchPrms.toString()+'"><inline class="badge" style="background-color: '+c+';">'+data+'</inline></span>'
+                            },
                         },
-                    },
                     { "data" : "name",
                         "width": "33%",
                         render: function (data, type, row, meta) {
                             var url = "./rule.html?hash=" + row['hash']
-                            return '<span class="name"><a href="' + url + '" target="_blank"><i class="bi bi-binoculars"></i> ' + data + '</a></span>';
+                            return '<span class="name"><a href="javascript:void(0);" onclick="openNav(`'+row['hash']+'`);"><i class="bi bi-binoculars"></i> ' + data + '</a></span>';
                         },
                     },
                     { "data" : "file_name",

@@ -92,3 +92,19 @@ i:hover {
     color: #0d6efd;
     border: 1px solid #0d6efd;
 }
+.sidenav {
+    height: 100%;
+    width: 0;
+    position: fixed;
+    z-index: 100;
+    top: 0;
+    right: 0;
+    background-color: #ffffff;
+    overflow-x: hidden;
+    transition: 0.5s;
+}
+.closebtn {
+    float: right;
+    margin-right: 10px;
+    font-size: 150%;
+} 

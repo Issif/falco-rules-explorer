@@ -16,10 +16,7 @@
     <script type="text/javascript" src="./utils.js"></script>
     </head>
     <body>
-    <div>
-        <a href="./index.html"><img src="https://sysdig.com/wp-content/uploads/2018/10/Falco-horizontal-logo-teal_2x.png" height="55" alt="falco logo"></a>
-    </div>
-    <div style="margin-left: 10px; width: 60%;">
+    <div style="margin-left: 10px; width: 75%;">
         <div style="padding-left: 10px; padding-bottom: 10px;">
             <span class="field">Type: </span><span id="type"></span>
         </div>
@@ -148,7 +145,7 @@
                     if (value.condition === "" || value.condition === undefined) {
                         document.getElementById("conditionDiv").remove();
                     } else {
-                           document.getElementById("condition").innerHTML = value.condition;
+                        document.getElementById("condition").innerHTML = value.condition;
                     }
                     // output
                     if (value.output === "" || value.output === undefined) {
