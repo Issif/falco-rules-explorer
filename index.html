@@ -19,8 +19,9 @@
     <div>
         <a href="./index.html"><img src="https://sysdig.com/wp-content/uploads/2018/10/Falco-horizontal-logo-teal_2x.png" height="55" alt="falco logo"></a>
         <div id="sidenav" class="sidenav">
-            <a href="javascript:void(0)" style="float: right; margin-right: 10px; font-size: 150%;" class="closebtn" onclick="closeNav()"><i class="bi bi-x-circle"></i></a>
-            <embed id="panel" type="text/html" src="" width="1024" height="1024"> 
+            <a href="javascript:void(0)" class="closebtn" onclick="closeNav()"><i class="bi bi-x-circle"></i></a>
+            <object id="details" data="" type="text/html" width="1024" height="1024">
+            </object>
         </div>
     </div>
     <div id="types" style="padding-left: 10px;">
@@ -51,7 +52,10 @@
     </body>
     <script>
         function openNav(hash) {
-            document.getElementById("panel").src = "rule.html?hash="+hash;
+            var url = new URL(window.location);
+            url.searchParams.set('hash', hash);
+            window.history.pushState({}, '', url);
+            document.getElementById("details").data = "rule.html?hash="+hash;
             document.getElementById("sidenav").style.width = "800px";
         }
 
@@ -160,6 +164,10 @@
         var status = ".*"
         if (headerstatus != null && headerstatus !== "all" && type !== "list" && type !== "macro" ) {
             status = headerstatus
+        }
+        var hash = searchPrms.get('hash');
+        if (hash !== "" && hash != null) {
+            openNav(hash);
         }
         $(document).ready(function() {
             $('#rules').DataTable({
