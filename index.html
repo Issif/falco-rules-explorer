@@ -75,6 +75,9 @@
         types.forEach ((item) => {
             var searchPrms = new URLSearchParams(window.location.search);
             var selected = searchPrms.get('type');
+            if (selected === null) {
+                selected = "all";
+            }
             searchPrms.set('type', item);
             var element = document.createElement('a');
             element.className = "btn btn-outline-primary btn-sm";
@@ -99,6 +102,9 @@
             Object.values(sources).forEach ((value) => {
                 var searchPrms = new URLSearchParams(window.location.search);
                 var selected = searchPrms.get('source');
+                if (selected === null) {
+                    selected = "all";
+                }
                 searchPrms.set('source', value);
                 var element = document.createElement('a');
                 element.className = "btn btn-outline-primary btn-sm";
@@ -114,6 +120,9 @@
         priorities.forEach ((item) => {
             var searchPrms = new URLSearchParams(window.location.search);
             var selected = searchPrms.get('priority');
+            if (selected === null) {
+                selected = "all";
+            }
             searchPrms.set('priority', item);
             var element = document.createElement('a');
             element.className = "btn btn-outline-primary btn-sm";
@@ -129,6 +138,9 @@
         statuses.forEach ((item) => {
             var searchPrms = new URLSearchParams(window.location.search);
             var selected = searchPrms.get('status');
+            if (selected === null) {
+                selected = "all";
+            }
             searchPrms.set('status', item);
             var element = document.createElement('a');
             element.className = "btn btn-outline-primary btn-sm";

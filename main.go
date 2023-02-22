@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -85,14 +84,14 @@ func init() {
 }
 
 func main() {
-	// downloadRuleFiles(rulesFileURL)
+	downloadRuleFiles(rulesFileURL)
 	scrapeRuleFiles(rulesFileURL)
 	findDependencies(r)
 
 	log.Println("Generate index.json")
 	j, err := json.Marshal(r)
 	checkErr(err)
-	checkErr(ioutil.WriteFile("./index.json", j, 0644))
+	checkErr(os.WriteFile("./index.json", j, 0644))
 }
 
 func setHashNameType(r Rules) {
@@ -233,7 +232,7 @@ func scrapeRuleFiles(f []string) {
 			defer wg.Done()
 			var v Rules
 			var n []yaml.Node
-			source, err := ioutil.ReadFile("./rules/" + getFileName(f))
+			source, err := os.ReadFile("./rules/" + getFileName(f))
 			checkErr(err)
 
 			checkErr(yaml.Unmarshal(source, &v))
