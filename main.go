@@ -15,7 +15,11 @@ import (
 	yaml "gopkg.in/yaml.v3"
 )
 
-type Rules []*rule
+type ruleFile struct {
+	RuleFiles []string `yaml:"rules_files"`
+}
+
+type rules []*rule
 
 type rule struct {
 	firstLine             int
@@ -24,7 +28,7 @@ type rule struct {
 	Comment               string                  `json:"comment"`
 	Permalink             string                  `json:"permalink,omitempty"`
 	RequiredEngineVersion string                  `yaml:"required_engine_version" json:"required_engine_version,omitempty"`
-	RequiredPluginVersion []RequiredPluginVersion `yaml:"required_plugin_versions" json:"required_plugin_versions,omitempty" `
+	RequiredPluginVersion []requiredPluginVersion `yaml:"required_plugin_versions" json:"required_plugin_versions,omitempty" `
 	Name                  string                  `json:"name,omitempty"`
 	Rule                  string                  `yaml:"rule" json:"rule,omitempty"`
 	Macro                 string                  `yaml:"macro" json:"macro,omitempty"`
@@ -41,28 +45,11 @@ type rule struct {
 	UsedBy                []string                `json:"used_by,omitempty"`
 	RType                 string                  `json:"type,omitempty"`
 	Hash                  string                  `json:"hash,omitempty"`
-	// UsedBy                []*rule                 `json:"used_by,omitempty"`
 }
 
-type RequiredPluginVersion struct {
+type requiredPluginVersion struct {
 	Name    string `yaml:"name" json:"name,omitempty"`
 	Version string `yaml:"version" json:"version,omitempty"`
-}
-
-type Dependencies struct {
-	Lists  []string `json:"lists,omitempty"`
-	Macros []string `json:"macros,omitempty"`
-}
-
-type UsedBy struct {
-	Rules  []string `json:"rules,omitempty"`
-	Macros []string `json:"macros,omitempty"`
-}
-
-type Index struct {
-	Hash  string   `json:"Hash,omitempty"`
-	RType string   `json:"type,omitempty"`
-	Tags  []string `yaml:"tags" json:"tags,omitempty"`
 }
 
 var (
@@ -76,122 +63,26 @@ var (
 	}
 )
 
-var r Rules
+var r rules
+var f ruleFile
 var reg *regexp.Regexp
 
 func init() {
 	reg = regexp.MustCompile(`([a-zA-z_]+\.)+[a-z_]+`)
+	registry, err := os.ReadFile("registry.yaml")
+	checkErr(err)
+	checkErr(yaml.Unmarshal(registry, &f))
 }
 
 func main() {
-	downloadRuleFiles(rulesFileURL)
-	scrapeRuleFiles(rulesFileURL)
+	downloadRuleFiles(f.RuleFiles)
+	scrapeRuleFiles(f.RuleFiles)
 	findDependencies(r)
 
 	log.Println("Generate index.json")
 	j, err := json.Marshal(r)
 	checkErr(err)
 	checkErr(os.WriteFile("./index.json", j, 0644))
-}
-
-func setHashNameType(r Rules) {
-	for _, i := range r {
-		if i == nil {
-			continue
-		}
-		switch {
-		case i.Macro != "":
-			i.Hash = fmt.Sprintf("%x", md5.Sum([]byte(i.Macro)))
-			i.RType = "macro"
-			i.Name = i.Macro
-		case i.Rule != "":
-			i.Hash = fmt.Sprintf("%x", md5.Sum([]byte(i.Rule)))
-			i.RType = "rule"
-			i.Name = i.Rule
-		case i.List != "":
-			i.Hash = fmt.Sprintf("%x", md5.Sum([]byte(i.List)))
-			i.RType = "list"
-			i.Name = i.List
-		}
-	}
-}
-
-func setLinePermaLinkFileName(r Rules, f string, n *[]yaml.Node) {
-	for _, i := range r {
-		if i == nil {
-			continue
-		}
-		if i.RType == "rule" || i.RType == "macro" || i.RType == "list" {
-			i.FileName = getFileName(f)
-			i.firstLine, i.lastLine = findLines(i.RType, i.Name, n)
-			i.Permalink = fmt.Sprintf("%v#L%v,L%v", f, i.firstLine, i.lastLine)
-		}
-	}
-}
-
-func setEnabled(r Rules) {
-	for _, i := range r {
-		if i == nil {
-			continue
-		}
-		if i.Enabled == "" {
-			i.Enabled = "true"
-		}
-	}
-}
-
-func setRequiredEngineVersion(r Rules) {
-	var v string
-	for _, i := range r {
-		if i == nil {
-			continue
-		}
-		if i.RequiredEngineVersion != "" {
-			v = i.RequiredEngineVersion
-		}
-	}
-	if v != "" {
-		for _, i := range r {
-			if i == nil {
-				continue
-			}
-			i.RequiredEngineVersion = v
-		}
-	}
-}
-
-func setRequiredPluginVersion(r Rules) {
-	v := []RequiredPluginVersion{}
-	for _, i := range r {
-		if i == nil {
-			continue
-		}
-		if len(i.RequiredPluginVersion) != 0 {
-			v = i.RequiredPluginVersion
-		}
-	}
-	if len(v) != 0 {
-		for _, i := range r {
-			if i == nil {
-				continue
-			}
-			i.RequiredPluginVersion = v
-		}
-	}
-}
-
-func setComment(r Rules, n *[]yaml.Node) {
-	for _, i := range r {
-		if i == nil {
-			continue
-		}
-		for _, j := range *n {
-			if (i.firstLine == j.Line) && j.HeadComment != "" {
-				s := strings.Split(j.HeadComment, "\n\n")
-				i.Comment = s[len(s)-1]
-			}
-		}
-	}
 }
 
 func downloadRuleFiles(f []string) {
@@ -223,6 +114,106 @@ func getRawURL(s string) string {
 	return s
 }
 
+func setHashNameType(r rules) {
+	for _, i := range r {
+		if i == nil {
+			continue
+		}
+		switch {
+		case i.Macro != "":
+			i.Hash = fmt.Sprintf("%x", md5.Sum([]byte(i.Macro)))
+			i.RType = "macro"
+			i.Name = i.Macro
+		case i.Rule != "":
+			i.Hash = fmt.Sprintf("%x", md5.Sum([]byte(i.Rule)))
+			i.RType = "rule"
+			i.Name = i.Rule
+		case i.List != "":
+			i.Hash = fmt.Sprintf("%x", md5.Sum([]byte(i.List)))
+			i.RType = "list"
+			i.Name = i.List
+		}
+	}
+}
+
+func setLinePermaLinkFileName(r rules, f string, n *[]yaml.Node) {
+	for _, i := range r {
+		if i == nil {
+			continue
+		}
+		if i.RType == "rule" || i.RType == "macro" || i.RType == "list" {
+			i.FileName = getFileName(f)
+			i.firstLine, i.lastLine = findLines(i.RType, i.Name, n)
+			i.Permalink = fmt.Sprintf("%v#L%v,L%v", f, i.firstLine, i.lastLine)
+		}
+	}
+}
+
+func setEnabled(r rules) {
+	for _, i := range r {
+		if i == nil {
+			continue
+		}
+		if i.Enabled == "" {
+			i.Enabled = "true"
+		}
+	}
+}
+
+func setRequiredEngineVersion(r rules) {
+	var v string
+	for _, i := range r {
+		if i == nil {
+			continue
+		}
+		if i.RequiredEngineVersion != "" {
+			v = i.RequiredEngineVersion
+		}
+	}
+	if v != "" {
+		for _, i := range r {
+			if i == nil {
+				continue
+			}
+			i.RequiredEngineVersion = v
+		}
+	}
+}
+
+func setRequiredPluginVersion(r rules) {
+	v := []requiredPluginVersion{}
+	for _, i := range r {
+		if i == nil {
+			continue
+		}
+		if len(i.RequiredPluginVersion) != 0 {
+			v = i.RequiredPluginVersion
+		}
+	}
+	if len(v) != 0 {
+		for _, i := range r {
+			if i == nil {
+				continue
+			}
+			i.RequiredPluginVersion = v
+		}
+	}
+}
+
+func setComment(r rules, n *[]yaml.Node) {
+	for _, i := range r {
+		if i == nil {
+			continue
+		}
+		for _, j := range *n {
+			if (i.firstLine == j.Line) && j.HeadComment != "" {
+				s := strings.Split(j.HeadComment, "\n\n")
+				i.Comment = s[len(s)-1]
+			}
+		}
+	}
+}
+
 func scrapeRuleFiles(f []string) {
 	var wg sync.WaitGroup
 	for _, i := range rulesFileURL {
@@ -230,7 +221,7 @@ func scrapeRuleFiles(f []string) {
 		wg.Add(1)
 		go func(f string) {
 			defer wg.Done()
-			var v Rules
+			var v rules
 			var n []yaml.Node
 			source, err := os.ReadFile("./rules/" + getFileName(f))
 			checkErr(err)
@@ -260,7 +251,7 @@ func scrapeRuleFiles(f []string) {
 	wg.Wait()
 }
 
-func findDependencies(r Rules) {
+func findDependencies(r rules) {
 	for _, i := range r {
 		if i == nil {
 			continue
@@ -348,6 +339,6 @@ func getFileName(s string) string {
 
 func checkErr(e error) {
 	if e != nil {
-		panic(e)
+		log.Fatalf(e.Error())
 	}
 }
