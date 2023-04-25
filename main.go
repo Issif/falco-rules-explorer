@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"time"
 
 	yaml "gopkg.in/yaml.v3"
 )
@@ -19,9 +20,12 @@ type ruleFile struct {
 	RuleFiles []string `yaml:"rules_files"`
 }
 
-type rules []*rule
+type items struct {
+	Date  string  `json:"date,omitempty"`
+	Items []*item `json:"items,omitempty"`
+}
 
-type rule struct {
+type item struct {
 	firstLine             int
 	lastLine              int
 	FileName              string                  `json:"file_name,omitempty"`
@@ -63,7 +67,7 @@ var (
 	}
 )
 
-var r rules
+var r items
 var f ruleFile
 var reg *regexp.Regexp
 
@@ -78,6 +82,8 @@ func main() {
 	downloadRuleFiles(f.RuleFiles)
 	scrapeRuleFiles(f.RuleFiles)
 	findDependencies(r)
+
+	r.Date = time.Now().Format(time.RFC3339)
 
 	log.Println("Generate index.json")
 	j, err := json.Marshal(r)
@@ -114,8 +120,8 @@ func getRawURL(s string) string {
 	return s
 }
 
-func setHashNameType(r rules) {
-	for _, i := range r {
+func setHashNameType(r items) {
+	for _, i := range r.Items {
 		if i == nil {
 			continue
 		}
@@ -136,8 +142,8 @@ func setHashNameType(r rules) {
 	}
 }
 
-func setLinePermaLinkFileName(r rules, f string, n *[]yaml.Node) {
-	for _, i := range r {
+func setLinePermaLinkFileName(r items, f string, n *[]yaml.Node) {
+	for _, i := range r.Items {
 		if i == nil {
 			continue
 		}
@@ -149,8 +155,8 @@ func setLinePermaLinkFileName(r rules, f string, n *[]yaml.Node) {
 	}
 }
 
-func setEnabled(r rules) {
-	for _, i := range r {
+func setEnabled(r items) {
+	for _, i := range r.Items {
 		if i == nil {
 			continue
 		}
@@ -160,9 +166,9 @@ func setEnabled(r rules) {
 	}
 }
 
-func setRequiredEngineVersion(r rules) {
+func setRequiredEngineVersion(r items) {
 	var v string
-	for _, i := range r {
+	for _, i := range r.Items {
 		if i == nil {
 			continue
 		}
@@ -171,7 +177,7 @@ func setRequiredEngineVersion(r rules) {
 		}
 	}
 	if v != "" {
-		for _, i := range r {
+		for _, i := range r.Items {
 			if i == nil {
 				continue
 			}
@@ -180,9 +186,9 @@ func setRequiredEngineVersion(r rules) {
 	}
 }
 
-func setRequiredPluginVersion(r rules) {
+func setRequiredPluginVersion(r items) {
 	v := []requiredPluginVersion{}
-	for _, i := range r {
+	for _, i := range r.Items {
 		if i == nil {
 			continue
 		}
@@ -191,7 +197,7 @@ func setRequiredPluginVersion(r rules) {
 		}
 	}
 	if len(v) != 0 {
-		for _, i := range r {
+		for _, i := range r.Items {
 			if i == nil {
 				continue
 			}
@@ -200,8 +206,8 @@ func setRequiredPluginVersion(r rules) {
 	}
 }
 
-func setComment(r rules, n *[]yaml.Node) {
-	for _, i := range r {
+func setComment(r items, n *[]yaml.Node) {
+	for _, i := range r.Items {
 		if i == nil {
 			continue
 		}
@@ -221,12 +227,12 @@ func scrapeRuleFiles(f []string) {
 		wg.Add(1)
 		go func(f string) {
 			defer wg.Done()
-			var v rules
+			var v items
 			var n []yaml.Node
 			source, err := os.ReadFile("./rules/" + getFileName(f))
 			checkErr(err)
 
-			checkErr(yaml.Unmarshal(source, &v))
+			checkErr(yaml.Unmarshal(source, &v.Items))
 			checkErr(yaml.Unmarshal(source, &n))
 			setHashNameType(v)
 			setEnabled(v)
@@ -234,7 +240,7 @@ func scrapeRuleFiles(f []string) {
 			setRequiredPluginVersion(v)
 			setLinePermaLinkFileName(v, f, &n)
 			setComment(v, &n)
-			for _, j := range v {
+			for _, j := range v.Items {
 				if j == nil {
 					continue
 				}
@@ -244,20 +250,20 @@ func scrapeRuleFiles(f []string) {
 				if j.Source == "" && j.RType == "rule" {
 					j.Source = "syscalls"
 				}
-				r = append(r, j)
+				r.Items = append(r.Items, j)
 			}
 		}(i)
 	}
 	wg.Wait()
 }
 
-func findDependencies(r rules) {
-	for _, i := range r {
+func findDependencies(r items) {
+	for _, i := range r.Items {
 		if i == nil {
 			continue
 		}
 		if i.Macro != "" {
-			for _, j := range r {
+			for _, j := range r.Items {
 				if j == nil || i.Hash == j.Hash {
 					continue
 				}
@@ -282,7 +288,7 @@ func findDependencies(r rules) {
 			}
 		}
 		if i.Rule != "" {
-			for _, j := range r {
+			for _, j := range r.Items {
 				if j == nil || i.Hash == j.Hash {
 					continue
 				}
@@ -293,13 +299,13 @@ func findDependencies(r rules) {
 				}
 				if j.Macro != "" {
 					if strings.Contains(reg.ReplaceAllString(i.Condition, ""), j.Macro) {
-						i.Dependencies = append(i.Dependencies, "list:"+j.Name+":"+j.Hash)
+						i.Dependencies = append(i.Dependencies, "macro:"+j.Name+":"+j.Hash)
 					}
 				}
 			}
 		}
 		if i.List != "" {
-			for _, j := range r {
+			for _, j := range r.Items {
 				if j == nil || i.Hash == j.Hash {
 					continue
 				}

@@ -89,7 +89,7 @@
         var searchPrms = new URLSearchParams(window.location.search);
         var hash = searchPrms.get('hash');
         $.getJSON('./index.json', function(data) {
-            Object.entries(data).forEach (([key,value]) => {
+            Object.entries(data['items']).forEach (([key,value]) => {
                 if (hash === value.hash) {
                     // type
                     var type = document.getElementById("type");

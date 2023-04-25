@@ -17,7 +17,10 @@
     </head>
     <body>
     <div>
+        <div id="header" style="padding-left: 10px;">
         <a href="./index.html"><img src="https://sysdig.com/wp-content/uploads/2018/10/Falco-horizontal-logo-teal_2x.png" height="55" alt="falco logo"></a>
+            <span id="date" style="float: right; padding-top: 20px; padding-right: 10px;"></span>
+        </div>
         <div id="sidenav" class="sidenav">
             <a href="javascript:void(0)" class="closebtn" onclick="closeNav()"><i class="bi bi-x-circle"></i></a>
             <object id="details" data="" type="text/html" width="1024" height="1024">
@@ -61,6 +64,9 @@
 
         function closeNav() {
             document.getElementById("sidenav").style.width = "0";
+            var url = new URL(window.location);
+            url.searchParams.delete('hash');
+            window.history.pushState({}, '', url);
         }
 
         var url = new URL(window.location);
@@ -91,7 +97,8 @@
         });
         var sources = [];
         $.getJSON('./index.json', function(data) {
-            Object.values(data).forEach ((value) => {
+            document.getElementById("date").textContent = "Last update: " + data['date'];
+            Object.values(data['items']).forEach ((value) => {
                 if (value.source === undefined) {
                     return "";
                 }
@@ -185,7 +192,7 @@
             $('#rules').DataTable({
                 ajax: {
                     url: "./index.json",
-                    dataSrc: ""
+                    dataSrc: "items"
                 },
                 "searchCols": [
                     { "search": type, "regex": true },
