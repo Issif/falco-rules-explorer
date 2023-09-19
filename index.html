@@ -36,6 +36,9 @@
     <div id="sources" style="padding-left: 10px;">
         Source:
     </div>
+    <div id="maturities" style="padding-left: 10px;">
+        Maturity:
+    </div>
     <div id="statuses" style="padding-left: 10px;">
         Status:
     </div>
@@ -48,6 +51,7 @@
                 <th>Name</th>
                 <th>File</th>
                 <th>Tags</th>
+                <th>Maturity</th>
                 <th>Status</th>
             </tr>
         </thead>
@@ -77,7 +81,6 @@
         window.history.pushState({}, '', url);
 
         const types = ['all', 'list', 'macro', 'rule'];
-        const priorities = ['all', 'DEBUG', 'INFO', 'NOTICE', 'WARNING', 'ERROR', 'CRITICAL', 'ALERT'];
         types.forEach ((item) => {
             var searchPrms = new URLSearchParams(window.location.search);
             var selected = searchPrms.get('type');
@@ -124,6 +127,7 @@
                 document.getElementById('sources').appendChild(element);
             });
         });
+        const priorities = ['all', 'DEBUG', 'INFO', 'NOTICE', 'WARNING', 'ERROR', 'CRITICAL', 'ALERT'];
         priorities.forEach ((item) => {
             var searchPrms = new URLSearchParams(window.location.search);
             var selected = searchPrms.get('priority');
@@ -140,6 +144,24 @@
             element.text = item;
             element.href = "?"+searchPrms.toString();
             document.getElementById('priorities').appendChild(element);
+        });
+        const maturities = ['all', 'stable', 'incubating', 'sandbox', 'deprecated'];
+        maturities.forEach ((item) => {
+            var searchPrms = new URLSearchParams(window.location.search);
+            var selected = searchPrms.get('maturity');
+            if (selected === null) {
+                selected = "all";
+            }
+            searchPrms.set('maturity', item);
+            var element = document.createElement('a');
+            element.className = "btn btn-outline-primary btn-sm";
+            if (selected == item) {
+                element.className = "btn btn-primary btn-sm";
+            }
+            element.style = "margin: 5px; padding-top: 8px; padding-bottom: 10px;"
+            element.text = item;
+            element.href = "?"+searchPrms.toString();
+            document.getElementById('maturities').appendChild(element);
         });
         const statuses = ['all', 'disabled', 'enabled']
         statuses.forEach ((item) => {
@@ -159,7 +181,7 @@
             element.href = "?"+searchPrms.toString();
             document.getElementById('statuses').appendChild(element);
         });
-
+        
         var searchPrms = new URLSearchParams(window.location.search);
         var search = searchPrms.get('search');
         if (search === null) {
@@ -178,6 +200,11 @@
         var source = ".*"
         if (headersource != null && headersource !== "all" && type !== "list" && type !== "macro" ) {
             source = headersource
+        }
+        var headermaturity = searchPrms.get('maturity');
+        var maturity = ".*"
+        if (headermaturity != null && headermaturity !== "all" ) {
+            maturity = headermaturity
         }
         var headerstatus = searchPrms.get('status');
         var status = ".*"
@@ -201,6 +228,7 @@
                     null,
                     null,
                     null,
+                    { "search": maturity, "regex": true },
                     { "search": status, "regex": true },
                 ],
                 "search": {"search": search },
@@ -262,6 +290,13 @@
                                 t = t + '<span><a href="./index.html?'+searchPrms.toString()+'"><inline class="badge tag" style="background-color: '+c+';">'+value+'</inline></span>'
                             });
                             return t;
+                        },
+                    },
+                    { "data" : "maturity",
+                        render: function (data, type, row, meta) {
+                            var searchPrms = new URLSearchParams(window.location.search);
+                            searchPrms.set('maturity', data);
+                            return '<span><a href="./index.html?'+searchPrms.toString()+'"><inline class="badge '+data+'">'+data+'</inline></span>'
                         },
                     },
                     { "data" : "enabled",

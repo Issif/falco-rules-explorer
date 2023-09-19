@@ -49,23 +49,13 @@ type item struct {
 	UsedBy                []string                `json:"used_by,omitempty"`
 	RType                 string                  `json:"type,omitempty"`
 	Hash                  string                  `json:"hash,omitempty"`
+	Maturity              string                  `json:"maturity,omitempty"`
 }
 
 type requiredPluginVersion struct {
 	Name    string `yaml:"name" json:"name,omitempty"`
 	Version string `yaml:"version" json:"version,omitempty"`
 }
-
-var (
-	rulesFileURL = []string{
-		"https://github.com/falcosecurity/rules/blob/main/rules/falco_rules.yaml",
-		"https://github.com/falcosecurity/rules/blob/main/rules/application_rules.yaml",
-		"https://github.com/falcosecurity/plugins/blob/master/plugins/k8saudit/rules/k8s_audit_rules.yaml",
-		"https://github.com/falcosecurity/plugins/blob/master/plugins/cloudtrail/rules/aws_cloudtrail_rules.yaml",
-		"https://github.com/falcosecurity/plugins/blob/master/plugins/github/rules/github.yaml",
-		"https://github.com/falcosecurity/plugins/blob/master/plugins/okta/rules/okta_rules.yaml",
-	}
-)
 
 var r items
 var f ruleFile
@@ -220,9 +210,31 @@ func setComment(r items, n *[]yaml.Node) {
 	}
 }
 
+func setMaturity(r items, s string) {
+	m := "unknown"
+	if strings.Contains(s, "falco_rules") {
+		m = "stable"
+	}
+	if strings.Contains(s, "deprecated") {
+		m = "deprecatd"
+	}
+	if strings.Contains(s, "incubating") {
+		m = "incubating"
+	}
+	if strings.Contains(s, "sandbox") {
+		m = "sandbox"
+	}
+	for _, i := range r.Items {
+		if i == nil {
+			continue
+		}
+		i.Maturity = m
+	}
+}
+
 func scrapeRuleFiles(f []string) {
 	var wg sync.WaitGroup
-	for _, i := range rulesFileURL {
+	for _, i := range f {
 		log.Printf("Scrape items from rules file: %v\n", i)
 		wg.Add(1)
 		go func(f string) {
@@ -240,6 +252,7 @@ func scrapeRuleFiles(f []string) {
 			setRequiredPluginVersion(v)
 			setLinePermaLinkFileName(v, f, &n)
 			setComment(v, &n)
+			setMaturity(v, f)
 			for _, j := range v.Items {
 				if j == nil {
 					continue

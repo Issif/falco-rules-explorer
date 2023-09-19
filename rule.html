@@ -53,6 +53,9 @@
             <span class="field">Output:</span><br>
             <pre class="code" style="padding-left: 55px;"><code class="language-falco" id="output" style="white-space: pre-wrap;"></code></pre>
         </div>
+        <div id="maturityDiv" style="padding-left: 10px; padding-bottom: 8px;">
+            <span class="field">Status: </span><span id="maturity"></span>
+        </div>
         <div id="statusDiv" style="padding-left: 10px; padding-bottom: 8px;">
             <span class="field">Status: </span><span id="status"></span>
         </div>
@@ -150,6 +153,14 @@
                         } else {
                             document.getElementById("output").textContent = value.output;
                             Prism.highlightElement(document.getElementById("output"));
+                        }
+                        // maturity
+                        var maturity = document.getElementById("maturity");
+                        if (value.maturity === "" || value.maturity === undefined) {
+                            document.getElementById("maturityDiv").remove();
+                        } else {
+                            document.getElementById("maturity").textContent = value.maturity;
+                            document.getElementById("maturity").classList.add("badge", value.maturity.toLowerCase());
                         }
                         // status
                         var status = document.getElementById("status");

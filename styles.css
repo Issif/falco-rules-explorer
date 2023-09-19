@@ -66,6 +66,18 @@ a:link {
 .debug {
     background-color: #29B6F6;
 }
+.stable {
+    background-color: #00c58a;
+}
+.incubating {
+    background-color: #f6b529;
+}
+.sandbox {
+    background-color: #ff5dd7;
+}
+.deprecated {
+    background-color: #ff3300;
+}
 .bi-x-circle {
     color: #383c3f; 
 }
