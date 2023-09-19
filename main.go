@@ -216,7 +216,7 @@ func setMaturity(r items, s string) {
 		m = "stable"
 	}
 	if strings.Contains(s, "deprecated") {
-		m = "deprecatd"
+		m = "deprecated"
 	}
 	if strings.Contains(s, "incubating") {
 		m = "incubating"
