@@ -78,6 +78,9 @@ a:link {
 .deprecated {
     background-color: #ff3300;
 }
+.unknown {
+    background-color: #646464;
+}
 .bi-x-circle {
     color: #383c3f; 
 }
