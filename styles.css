@@ -70,16 +70,16 @@ a:link {
     background-color: #00c58a;
 }
 .incubating {
-    background-color: #f6b529;
+    background-color: #ffa318;
 }
 .sandbox {
-    background-color: #ff5dd7;
+    background-color:   #c57fff;
 }
 .deprecated {
     background-color: #ff3300;
 }
 .unknown {
-    background-color: #646464;
+    background-color: #818181;
 }
 .bi-x-circle {
     color: #383c3f; 
