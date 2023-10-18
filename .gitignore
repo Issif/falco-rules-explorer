@@ -1,3 +1,2 @@
-rules
-rules/*
+rules/*.yaml
 .vscode

@@ -66,6 +66,11 @@ func init() {
 	registry, err := os.ReadFile("registry.yaml")
 	checkErr(err)
 	checkErr(yaml.Unmarshal(registry, &f))
+
+	t := time.Now()
+	fmt.Println(t.Unix())
+	fmt.Println(t.Format("2006/02/01"))
+	os.Exit(0)
 }
 
 func main() {
