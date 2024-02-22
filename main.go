@@ -211,7 +211,7 @@ func setComment(r items, n *[]yaml.Node) {
 }
 
 func setMaturity(r items, s string) {
-	m := "unknown"
+	var m string
 	if strings.Contains(s, "falco_rules") {
 		m = "stable"
 	}

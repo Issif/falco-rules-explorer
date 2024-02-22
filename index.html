@@ -288,15 +288,18 @@
                                 var searchPrms = new URLSearchParams(window.location.search);
                                 searchPrms.set('search', value);
                                 t = t + '<span><a href="./index.html?'+searchPrms.toString()+'"><inline class="badge tag" style="background-color: '+c+';">'+value+'</inline></span>'
-                            });
-                            return t;
+                                });
+                                return t;
+                            },
                         },
-                    },
-                    { "data" : "maturity",
+                        { "data" : "maturity",
                         render: function (data, type, row, meta) {
                             var searchPrms = new URLSearchParams(window.location.search);
-                            searchPrms.set('maturity', data);
-                            return '<span><a href="./index.html?'+searchPrms.toString()+'"><inline class="badge '+data+'">'+data+'</inline></span>'
+                            if (data !== undefined) {
+                                searchPrms.set('maturity', data);
+                                return '<span><a href="./index.html?'+searchPrms.toString()+'"><inline class="badge '+data+'">'+data+'</inline></span>'
+                            }
+                            return '';
                         },
                     },
                     { "data" : "enabled",
@@ -332,4 +335,5 @@
             });
         });
         </script>
+        <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=bae0f635-8d0c-495b-b918-e563bad36aef" />
 </html>
