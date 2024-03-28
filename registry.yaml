@@ -1,7 +1,6 @@
 ---
 rules_files:
   - "https://github.com/falcosecurity/rules/blob/main/rules/falco_rules.yaml"
-  - "https://github.com/falcosecurity/rules/blob/main/rules/falco-deprecated_rules.yaml"
   - "https://github.com/falcosecurity/rules/blob/main/rules/falco-incubating_rules.yaml"
   - "https://github.com/falcosecurity/rules/blob/main/rules/falco-sandbox_rules.yaml"
   - "https://github.com/falcosecurity/plugins/blob/master/plugins/k8saudit/rules/k8s_audit_rules.yaml"
