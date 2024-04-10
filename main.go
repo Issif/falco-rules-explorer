@@ -261,7 +261,7 @@ func scrapeRuleFiles(f []string) {
 					continue
 				}
 				if j.Source == "" && j.RType == "rule" {
-					j.Source = "syscalls"
+					j.Source = "syscall"
 				}
 				r.Items = append(r.Items, j)
 			}
@@ -278,6 +278,9 @@ func findDependencies(r items) {
 		if i.Macro != "" {
 			for _, j := range r.Items {
 				if j == nil || i.Hash == j.Hash {
+					continue
+				}
+				if i.Maturity != j.Maturity {
 					continue
 				}
 				if j.List != "" {
@@ -305,6 +308,9 @@ func findDependencies(r items) {
 				if j == nil || i.Hash == j.Hash {
 					continue
 				}
+				if i.Maturity != j.Maturity {
+					continue
+				}
 				if j.List != "" {
 					if strings.Contains(reg.ReplaceAllString(i.Condition, ""), j.List) {
 						i.Dependencies = append(i.Dependencies, "list:"+j.Name+":"+j.Hash)
@@ -320,6 +326,9 @@ func findDependencies(r items) {
 		if i.List != "" {
 			for _, j := range r.Items {
 				if j == nil || i.Hash == j.Hash {
+					continue
+				}
+				if i.Maturity != j.Maturity {
 					continue
 				}
 				if j.Macro != "" && i.Macro != j.Macro {
