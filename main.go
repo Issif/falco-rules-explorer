@@ -25,6 +25,28 @@ type items struct {
 	Items []*item `json:"items,omitempty"`
 }
 
+type mergedYamlFile struct {
+	Lists  []mergedItem `yaml:"lists"`
+	Macros []mergedItem `yaml:"macros"`
+	Rules  []mergedItem `yaml:"rules"`
+}
+
+type mergedItem struct {
+	Info itemInfo `yaml:"info"`
+}
+
+type itemInfo struct {
+	Name      string   `yaml:"name"`
+	Items     []string `yaml:"items,omitempty"`
+	Condition string   `yaml:"condition,omitempty"`
+	Desc      string   `yaml:"desc,omitempty"`
+	Output    string   `yaml:"output,omitempty"`
+	Priority  string   `yaml:"priority,omitempty"`
+	Source    string   `yaml:"source,omitempty"`
+	Tags      []string `yaml:"tags,omitempty"`
+	Enabled   string   `yaml:"enabled,omitempty"`
+}
+
 type item struct {
 	firstLine             int
 	lastLine              int
@@ -84,6 +106,12 @@ func main() {
 func downloadRuleFiles(f []string) {
 	var wg sync.WaitGroup
 	for _, i := range f {
+		// Skip local files (anything that's not a URL)
+		if !strings.HasPrefix(i, "http://") && !strings.HasPrefix(i, "https://") {
+			log.Printf("Skip local file: %v\n", i)
+			continue
+		}
+
 		log.Printf("Download rules file: %v\n", i)
 		wg.Add(1)
 		go func(f string) {
@@ -232,8 +260,115 @@ func setMaturity(r items, s string) {
 	}
 }
 
+func isMergedFormat(source []byte) bool {
+	// Try to parse as merged format and check for the presence of info sections
+	var mf mergedYamlFile
+	if err := yaml.Unmarshal(source, &mf); err != nil {
+		return false
+	}
+
+	// Check if any lists/macros/rules have the merged format (info section)
+	for _, list := range mf.Lists {
+		if list.Info.Name != "" {
+			return true
+		}
+	}
+	for _, macro := range mf.Macros {
+		if macro.Info.Name != "" {
+			return true
+		}
+	}
+	for _, rule := range mf.Rules {
+		if rule.Info.Name != "" {
+			return true
+		}
+	}
+
+	return false
+}
+
+func parseMergedFile(source []byte, v *items, fileName string) {
+	var mf mergedYamlFile
+	checkErr(yaml.Unmarshal(source, &mf))
+
+	// Convert merged lists to items
+	for _, list := range mf.Lists {
+		item := &item{
+			Name:     list.Info.Name,
+			List:     list.Info.Name,
+			Items:    list.Info.Items,
+			Tags:     list.Info.Tags,
+			RType:    "list",
+			Enabled:  "true",
+			FileName: getFileName(fileName),
+		}
+		if item.Enabled == "" {
+			item.Enabled = "true"
+		}
+		item.Hash = fmt.Sprintf("%x", md5.Sum([]byte(item.List)))
+		setMaturityFromTags(item)
+		v.Items = append(v.Items, item)
+	}
+
+	// Convert merged macros to items
+	for _, macro := range mf.Macros {
+		item := &item{
+			Name:      macro.Info.Name,
+			Macro:     macro.Info.Name,
+			Condition: macro.Info.Condition,
+			Tags:      macro.Info.Tags,
+			RType:     "macro",
+			Enabled:   "true",
+			FileName:  getFileName(fileName),
+		}
+		if item.Enabled == "" {
+			item.Enabled = "true"
+		}
+		item.Hash = fmt.Sprintf("%x", md5.Sum([]byte(item.Macro)))
+		setMaturityFromTags(item)
+		v.Items = append(v.Items, item)
+	}
+
+	// Convert merged rules to items
+	for _, rule := range mf.Rules {
+		item := &item{
+			Name:     rule.Info.Name,
+			Rule:     rule.Info.Name,
+			Desc:     rule.Info.Desc,
+			Output:   rule.Info.Output,
+			Priority: rule.Info.Priority,
+			Source:   rule.Info.Source,
+			Tags:     rule.Info.Tags,
+			Enabled:  rule.Info.Enabled,
+			RType:    "rule",
+			FileName: getFileName(fileName),
+		}
+		if item.Enabled == "" {
+			item.Enabled = "true"
+		}
+		if item.Source == "" {
+			item.Source = "syscall"
+		}
+		item.Hash = fmt.Sprintf("%x", md5.Sum([]byte(item.Rule)))
+		setMaturityFromTags(item)
+		v.Items = append(v.Items, item)
+	}
+}
+
+func setMaturityFromTags(item *item) {
+	for _, tag := range item.Tags {
+		if strings.HasPrefix(tag, "maturity_") {
+			item.Maturity = strings.TrimPrefix(tag, "maturity_")
+			return
+		}
+	}
+	// Fallback to stable if no maturity tag found
+	item.Maturity = "stable"
+}
+
 func scrapeRuleFiles(f []string) {
 	var wg sync.WaitGroup
+	var mu sync.Mutex
 	for _, i := range f {
 		log.Printf("Scrape items from rules file: %v\n", i)
 		wg.Add(1)
@@ -241,18 +376,33 @@ func scrapeRuleFiles(f []string) {
 			defer wg.Done()
 			var v items
 			var n []yaml.Node
-			source, err := os.ReadFile("./rules/" + getFileName(f))
+			var filePath string
+			if strings.HasPrefix(f, "http://") || strings.HasPrefix(f, "https://") {
+				// URL file downloaded to ./rules/
+				filePath = "./rules/" + getFileName(f)
+			} else {
+				// Local file - use path as-is
+				filePath = f
+			}
+			source, err := os.ReadFile(filePath)
 			checkErr(err)
 
-			checkErr(yaml.Unmarshal(source, &v.Items))
-			checkErr(yaml.Unmarshal(source, &n))
-			setHashNameType(v)
-			setEnabled(v)
-			setRequiredEngineVersion(v)
-			setRequiredPluginVersion(v)
-			setLinePermaLinkFileName(v, f, &n)
-			setComment(v, &n)
-			setMaturity(v, f)
+			// Try to detect file format by content structure
+			if isMergedFormat(source) {
+				parseMergedFile(source, &v, f)
+			} else {
+				checkErr(yaml.Unmarshal(source, &v.Items))
+				checkErr(yaml.Unmarshal(source, &n))
+				setHashNameType(v)
+				setEnabled(v)
+				setRequiredEngineVersion(v)
+				setRequiredPluginVersion(v)
+				setLinePermaLinkFileName(v, f, &n)
+				setComment(v, &n)
+				setMaturity(v, f)
+			}
+
+			mu.Lock()
 			for _, j := range v.Items {
 				if j == nil {
 					continue
@@ -265,6 +415,7 @@ func scrapeRuleFiles(f []string) {
 				}
 				r.Items = append(r.Items, j)
 			}
+			mu.Unlock()
 		}(i)
 	}
 	wg.Wait()
