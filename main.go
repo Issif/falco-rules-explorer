@@ -332,16 +332,17 @@ func parseMergedFile(source []byte, v *items, fileName string) {
 	// Convert merged rules to items
 	for _, rule := range mf.Rules {
 		item := &item{
-			Name:     rule.Info.Name,
-			Rule:     rule.Info.Name,
-			Desc:     rule.Info.Desc,
-			Output:   rule.Info.Output,
-			Priority: rule.Info.Priority,
-			Source:   rule.Info.Source,
-			Tags:     rule.Info.Tags,
-			Enabled:  rule.Info.Enabled,
-			RType:    "rule",
-			FileName: getFileName(fileName),
+			Name:      rule.Info.Name,
+			Rule:      rule.Info.Name,
+			Condition: rule.Info.Condition,
+			Desc:      rule.Info.Desc,
+			Output:    rule.Info.Output,
+			Priority:  rule.Info.Priority,
+			Source:    rule.Info.Source,
+			Tags:      rule.Info.Tags,
+			Enabled:   rule.Info.Enabled,
+			RType:     "rule",
+			FileName:  getFileName(fileName),
 		}
 		if item.Enabled == "" {
 			item.Enabled = "true"
