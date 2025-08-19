@@ -354,6 +354,9 @@ func parseMergedFile(source []byte, v *items, fileName string) {
 		setMaturityFromTags(item)
 		v.Items = append(v.Items, item)
 	}
+
+	// Apply filename-based maturity for items that don't have tag-based maturity
+	setMaturity(*v, fileName)
 }
 
 func setMaturityFromTags(item *item) {
@@ -363,8 +366,7 @@ func setMaturityFromTags(item *item) {
 			return
 		}
 	}
-	// Fallback to stable if no maturity tag found
-	item.Maturity = "stable"
+	// Leave maturity empty if no tag found (consistent with setMaturity behavior)
 }
 
 func scrapeRuleFiles(f []string) {

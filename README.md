@@ -38,6 +38,28 @@ rules_files:
 
 The system automatically detects and supports both standard Falco rule files and merged rule files (with `info` sections) regardless of filename.
 
+#### Extracting Rules from Falco
+
+When extracting rules from a running Falco instance, **extract each maturity level separately** to maintain proper classification:
+
+```bash
+# Extract stable rules
+falco -L -r /etc/falco/falco_rules.yaml -r /etc/falco/rules.d/falco_rules_override.yaml 2>/dev/null | yq -P > stable_rules.yaml
+
+# Extract incubating rules
+falco -L -r /etc/falco/incubating_rules.yaml  -r /etc/falco/rules.d/incubating_rules_override.yaml 2>/dev/null | yq -P > incubating_rules.yaml
+
+# Extract sandbox rules
+falco -L -r /etc/falco/falco-sandbox_rules.yaml  -r /etc/falco/rules.d/sandbox_rules_override.yaml 2>/dev/null | yq -P > sandbox_rules.yaml
+
+# Extract custom company rules
+falco -L -r /etc/falco/rules.d/company_rules.yaml 2>/dev/null | yq -P > company_custom_rules.yaml
+```
+
+**Important:** Use descriptive filenames containing maturity keywords (`stable`, `incubating`, `sandbox`, `deprecated`) so the explorer can automatically categorize them correctly.
+
+**Why separate by maturity?** Mixing rules from different maturity levels in a single `falco -L` command would cause all rules to inherit the same maturity classification, making it impossible to distinguish stable production rules from experimental ones.
+
 ### Working with Merged Rules
 
 Merged rule files have a special structure that includes compiled metadata. To generate merged rules from your running Falco instance:
